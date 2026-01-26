@@ -1,0 +1,8 @@
+{
+  "name": "RaziqTech Studios - Full-Stack Tech Startup",
+  "description": "A high-performance web, mobile, and AI solutions provider with a built-in administration portal for managing employees, portfolios, and client inquiries.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
