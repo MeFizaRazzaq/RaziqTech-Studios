@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Briefcase, 
@@ -11,17 +11,57 @@ import {
   CheckCircle,
   FileText,
   Clock,
-  ArrowRight
+  ArrowRight,
+  Send,
+  Users as UsersIcon,
+  MessageSquare,
+  Circle,
+  CheckCircle2,
+  Calendar,
+  X
 } from 'lucide-react';
 import { useAuth } from '../App';
 import { MockDB } from '../db';
+import { Project, Milestone } from '../types';
 
 const ClientDashboard: React.FC = () => {
   const { user, logout } = useAuth();
+  const [projects, setProjects] = useState(MockDB.getProjects());
   const inquiries = MockDB.getInquiries().filter(i => i.clientId === user?.id || i.email === user?.email);
-  // In a real app we'd link projects to clients via a join table. 
-  // For mock purposes, let's show all active projects as "their" projects.
-  const activeProjects = MockDB.getProjects().filter(p => p.status !== 'COMPLETED');
+  
+  const activeProjects = projects.filter(p => p.status !== 'COMPLETED');
+  
+  const [openChatProjectId, setOpenChatProjectId] = useState<string | null>(null);
+  const [chatInput, setChatInput] = useState('');
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleUpdate = () => {
+        setProjects(MockDB.getProjects());
+    };
+    window.addEventListener('db-update', handleUpdate);
+    return () => window.removeEventListener('db-update', handleUpdate);
+  }, []);
+
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [openChatProjectId, projects]);
+
+  const handleSendProjectMessage = (projectId: string) => {
+    if (!chatInput.trim() || !user) return;
+
+    MockDB.addProjectChatMessage(projectId, {
+      senderId: user.id,
+      senderName: user.name,
+      senderRole: user.role,
+      content: chatInput.trim(),
+      isVisibleToClient: true
+    });
+
+    setChatInput('');
+  };
 
   return (
     <div className="flex min-h-screen bg-neutral-offwhite">
@@ -79,7 +119,7 @@ const ClientDashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           {/* Active Projects Hub */}
           <div className="lg:col-span-2 space-y-10">
-            <div className="bg-white p-12 rounded-[3rem] border border-navy/5 shadow-xl">
+            <div className="bg-white p-12 rounded-[3rem] border border-navy/5 shadow-xl overflow-hidden">
               <div className="flex items-center justify-between mb-12">
                 <h3 className="text-2xl font-black text-navy">Execution Pipeline</h3>
                 <span className="px-4 py-2 bg-navy text-ice rounded-xl text-[10px] font-black uppercase tracking-widest">
@@ -87,9 +127,9 @@ const ClientDashboard: React.FC = () => {
                 </span>
               </div>
               
-              <div className="space-y-12">
+              <div className="space-y-16">
                 {activeProjects.map(proj => (
-                  <div key={proj.id} className="space-y-6 group">
+                  <div key={proj.id} className="space-y-8 group">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-6">
                         <div className="w-16 h-16 bg-neutral-offwhite rounded-2xl overflow-hidden">
@@ -100,9 +140,20 @@ const ClientDashboard: React.FC = () => {
                           <p className="text-xs font-black text-navy/40 uppercase tracking-widest">{proj.category} Domain</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-black text-ice">{proj.progress}%</p>
-                        <p className="text-[10px] font-black text-navy/30 uppercase tracking-[0.2em]">{proj.status}</p>
+                      <div className="flex items-center space-x-6">
+                        {proj.clientChatEnabled && (
+                          <button 
+                            onClick={() => setOpenChatProjectId(proj.id)}
+                            className="flex items-center space-x-2 px-4 py-2 bg-ice text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-ice/20 hover:bg-ice-dark transition-soft hover-lift"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            <span>Conversation</span>
+                          </button>
+                        )}
+                        <div className="text-right">
+                          <p className="text-2xl font-black text-ice">{proj.progress}%</p>
+                          <p className="text-[10px] font-black text-navy/30 uppercase tracking-[0.2em]">{proj.status}</p>
+                        </div>
                       </div>
                     </div>
                     <div className="h-3 bg-neutral-offwhite rounded-full overflow-hidden">
@@ -110,6 +161,19 @@ const ClientDashboard: React.FC = () => {
                         className="h-full bg-ice transition-all duration-1000 ease-out" 
                         style={{ width: `${proj.progress}%` }}
                       ></div>
+                    </div>
+
+                    {/* Milestones for Client */}
+                    <div className="bg-neutral-offwhite/30 rounded-2xl p-6">
+                        <h5 className="text-[9px] font-black text-navy/40 uppercase tracking-widest mb-4">Milestone Tracker</h5>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {proj.milestones?.map(m => (
+                                <div key={m.id} className="flex items-center space-x-3 text-xs bg-white p-3 rounded-xl border border-navy/5 shadow-sm">
+                                    {m.isCompleted ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Circle className="w-4 h-4 text-navy/10" />}
+                                    <span className={`font-bold ${m.isCompleted ? 'text-navy/40' : 'text-navy'}`}>{m.title}</span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                   </div>
                 ))}
@@ -167,28 +231,81 @@ const ClientDashboard: React.FC = () => {
               </div>
               <CheckCircle className="absolute -bottom-10 -right-10 w-48 h-48 text-white/5" />
             </div>
+          </div>
+        </div>
 
-            <div className="bg-white p-10 rounded-[3rem] border border-navy/5 shadow-xl">
-              <h4 className="text-xl font-black text-navy mb-8">Project Health</h4>
-              <div className="space-y-8">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span className="text-sm font-bold text-navy/60">Milestone Accuracy</span>
+        {/* Project Chat Modal for Client */}
+        {openChatProjectId && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-navy/20 backdrop-blur-md">
+            <div className="bg-white w-full max-w-4xl h-[80vh] rounded-[3rem] shadow-2xl border border-navy/5 relative flex flex-col overflow-hidden">
+              <button 
+                onClick={() => setOpenChatProjectId(null)}
+                className="absolute top-8 right-8 p-3 bg-neutral-offwhite rounded-2xl hover:bg-navy hover:text-white transition-soft z-20"
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              <div className="p-10 border-b border-navy/5 bg-white relative z-10 flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-ice text-white rounded-2xl shadow-lg shadow-ice/20">
+                    <MessageCircle className="w-6 h-6" />
                   </div>
-                  <span className="text-sm font-black text-navy">98%</span>
+                  <div>
+                    <h2 className="text-2xl font-black text-navy tracking-tight">
+                      {projects.find(p => p.id === openChatProjectId)?.title} Relay
+                    </h2>
+                    <p className="text-xs font-bold text-navy/40 uppercase tracking-widest">Active Partner Engineering Sync</p>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span className="text-sm font-bold text-navy/60">Code Quality (QA)</span>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-12 space-y-6 bg-neutral-offwhite/10">
+                {projects.find(p => p.id === openChatProjectId)?.chatMessages?.filter(m => m.isVisibleToClient).length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-12 opacity-20">
+                    <UsersIcon className="w-16 h-16 mb-4" />
+                    <p className="font-black text-xl uppercase tracking-widest">Awaiting synchronization</p>
                   </div>
-                  <span className="text-sm font-black text-navy">A+</span>
+                ) : (
+                  projects.find(p => p.id === openChatProjectId)?.chatMessages.filter(m => m.isVisibleToClient).map(msg => (
+                    <div key={msg.id} className={`flex flex-col ${msg.senderId === user?.id ? 'items-end' : 'items-start'}`}>
+                      <div className={`max-w-[80%] p-6 rounded-2xl shadow-sm ${msg.senderId === user?.id ? 'bg-navy text-white rounded-tr-none' : 'bg-white border border-navy/5 text-navy rounded-tl-none'}`}>
+                        <div className="flex items-center justify-between mb-2 space-x-8">
+                          <p className={`text-[9px] font-black uppercase tracking-widest ${msg.senderId === user?.id ? 'text-ice' : 'text-navy/30'}`}>
+                            {msg.senderName} • {msg.senderRole}
+                          </p>
+                          <p className={`text-[8px] font-black uppercase ${msg.senderId === user?.id ? 'text-white/30' : 'text-navy/20'}`}>
+                            {new Date(msg.timestamp).toLocaleTimeString()}
+                          </p>
+                        </div>
+                        <p className="text-sm font-semibold leading-relaxed">{msg.content}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+                <div ref={chatEndRef} />
+              </div>
+
+              <div className="p-8 bg-white border-t border-navy/5">
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    placeholder="Communicate with project leads..."
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSendProjectMessage(openChatProjectId)}
+                    className="w-full pl-6 pr-16 py-4 bg-neutral-offwhite border-2 border-transparent rounded-2xl focus:outline-none focus:border-ice focus:bg-white transition-soft font-bold text-sm"
+                  />
+                  <button 
+                    onClick={() => handleSendProjectMessage(openChatProjectId)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-3 text-ice hover:text-ice-dark transition-soft"
+                  >
+                    <Send className="w-6 h-6" />
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

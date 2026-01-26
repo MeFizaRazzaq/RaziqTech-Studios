@@ -31,6 +31,25 @@ export interface Message {
   isAdmin: boolean;
 }
 
+export interface ProjectChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  senderRole: UserRole;
+  content: string;
+  timestamp: string;
+  isVisibleToClient: boolean;
+}
+
+export interface InternalMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  content: string;
+  timestamp: string;
+  readBy: string[]; // User IDs who have seen the message
+}
+
 export interface EmployeeProfile {
   id: string;
   userId: string;
@@ -70,6 +89,8 @@ export interface Project {
   progress: number; // 0-100
   status: 'IN_PLANNING' | 'IN_DEVELOPMENT' | 'STAGING' | 'COMPLETED';
   milestones?: Milestone[];
+  clientChatEnabled: boolean; // Toggle to include client in conversation
+  chatMessages: ProjectChatMessage[];
 }
 
 export interface Inquiry {

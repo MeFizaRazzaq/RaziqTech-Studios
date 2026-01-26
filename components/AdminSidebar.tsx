@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -9,13 +9,28 @@ import {
   Settings, 
   LogOut, 
   Rocket,
-  ChevronRight
+  ChevronRight,
+  Bell
 } from 'lucide-react';
 import { useAuth } from '../App';
+import { MockDB } from '../db';
 
 const AdminSidebar: React.FC = () => {
   const { pathname } = useLocation();
   const { logout, user } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const calculateUnread = () => {
+      if (!user) return;
+      const staff = MockDB.getStaffRelay().filter(m => !m.readBy.includes(user.id)).length;
+      // Admin should check all direct relays for unread (complex for mock, but let's count staff relay for now)
+      setUnreadCount(staff);
+    };
+    calculateUnread();
+    window.addEventListener('db-update', calculateUnread);
+    return () => window.removeEventListener('db-update', calculateUnread);
+  }, [user]);
 
   const menuItems = [
     { name: 'Analytics', icon: <LayoutDashboard className="w-5 h-5" />, path: '/admin' },
@@ -54,6 +69,9 @@ const AdminSidebar: React.FC = () => {
                   </div>
                   <span>{item.name}</span>
                 </div>
+                {item.name === 'Leads' && unreadCount > 0 && (
+                  <span className="bg-red-500 text-white text-[8px] font-black px-2 py-1 rounded-full">{unreadCount}</span>
+                )}
                 {isActive && <ChevronRight className="w-4 h-4 text-ice" />}
               </Link>
             );

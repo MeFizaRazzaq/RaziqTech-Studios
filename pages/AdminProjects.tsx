@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import AdminSidebar from '../components/AdminSidebar';
 import { 
   Plus, 
@@ -17,16 +17,29 @@ import {
   Flag,
   Calendar,
   User as UserIcon,
-  Edit3
+  Edit3,
+  MessageSquare,
+  Eye,
+  EyeOff,
+  MessageCircle,
+  Send,
+  Users as UsersIcon
 } from 'lucide-react';
 import { MockDB } from '../db';
-import { Project, EmployeeProfile, Milestone } from '../types';
+import { Project, EmployeeProfile, Milestone, UserRole } from '../types';
+import { useAuth } from '../App';
 
 const AdminProjects: React.FC = () => {
+  const { user } = useAuth();
   const [projects, setProjects] = useState(MockDB.getProjects());
   const [profiles, setProfiles] = useState(MockDB.getProfiles());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [openChatProjectId, setOpenChatProjectId] = useState<string | null>(null);
+
+  // Chat State
+  const [chatInput, setChatInput] = useState('');
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Milestone Form State
   const [isMilestoneFormOpen, setIsMilestoneFormOpen] = useState(false);
@@ -50,8 +63,24 @@ const AdminProjects: React.FC = () => {
     progress: 0,
     status: 'IN_DEVELOPMENT' as any,
     teamIds: [] as string[],
-    milestones: [] as Milestone[]
+    milestones: [] as Milestone[],
+    clientChatEnabled: false
   });
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setProjects(MockDB.getProjects());
+      setProfiles(MockDB.getProfiles());
+    };
+    window.addEventListener('db-update', handleUpdate);
+    return () => window.removeEventListener('db-update', handleUpdate);
+  }, []);
+
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [openChatProjectId, projects]);
 
   const openModal = (proj?: Project) => {
     if (proj) {
@@ -68,7 +97,8 @@ const AdminProjects: React.FC = () => {
         progress: proj.progress,
         status: proj.status,
         teamIds: proj.teamIds || [],
-        milestones: proj.milestones || []
+        milestones: proj.milestones || [],
+        clientChatEnabled: proj.clientChatEnabled
       });
     } else {
       setEditingProject(null);
@@ -84,7 +114,8 @@ const AdminProjects: React.FC = () => {
         progress: 0,
         status: 'IN_PLANNING',
         teamIds: [],
-        milestones: []
+        milestones: [],
+        clientChatEnabled: false
       });
     }
     setIsModalOpen(true);
@@ -114,7 +145,8 @@ const AdminProjects: React.FC = () => {
       progress: calculatedProgress,
       status: formData.status,
       teamIds: formData.teamIds,
-      milestones: formData.milestones
+      milestones: formData.milestones,
+      clientChatEnabled: formData.clientChatEnabled
     };
 
     if (editingProject) {
@@ -141,6 +173,24 @@ const AdminProjects: React.FC = () => {
         ? prev.teamIds.filter(id => id !== userId)
         : [...prev.teamIds, userId]
     }));
+  };
+
+  const handleSendProjectMessage = (projectId: string) => {
+    if (!chatInput.trim() || !user) return;
+
+    MockDB.addProjectChatMessage(projectId, {
+      senderId: user.id,
+      senderName: user.name,
+      senderRole: user.role,
+      content: chatInput.trim(),
+      isVisibleToClient: true 
+    });
+
+    setChatInput('');
+  };
+
+  const handleToggleClientChat = (projectId: string, enabled: boolean) => {
+    MockDB.toggleProjectClientChat(projectId, enabled);
   };
 
   // Milestone Actions
@@ -236,6 +286,11 @@ const AdminProjects: React.FC = () => {
                 <div className="absolute bottom-6 right-6 px-4 py-1.5 bg-ice text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl">
                   {proj.progress}% Complete
                 </div>
+                {proj.clientChatEnabled && (
+                    <div className="absolute top-6 right-6 px-3 py-1 bg-green-500 text-white rounded-lg text-[8px] font-black uppercase tracking-widest shadow-xl flex items-center">
+                        <MessageSquare className="w-2.5 h-2.5 mr-1" /> Client Access Active
+                    </div>
+                )}
               </div>
               <div className="p-10 flex-grow">
                 <div className="flex justify-between items-start mb-6">
@@ -255,15 +310,25 @@ const AdminProjects: React.FC = () => {
                 </div>
               </div>
               <div className="p-8 border-t border-navy/5 flex items-center justify-between bg-neutral-offwhite/30">
-                <span className="text-[10px] font-black text-navy/40 uppercase tracking-widest flex items-center">
-                  <Layers className="w-4 h-4 mr-2" />
-                  {proj.teamIds?.length || 0} Leads Assigned
-                </span>
+                <div className="flex space-x-4">
+                  <button 
+                    onClick={() => setOpenChatProjectId(proj.id)}
+                    className="p-3 bg-white text-ice border border-ice/20 rounded-xl hover:bg-ice hover:text-white transition-soft"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => openModal(proj)}
+                    className="p-3 bg-white text-navy border border-navy/5 rounded-xl hover:bg-navy hover:text-white transition-soft"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                </div>
                 <button 
                   onClick={() => openModal(proj)}
                   className="text-ice text-xs font-black hover:underline uppercase tracking-widest flex items-center"
                 >
-                  Configure <ExternalLink className="ml-2 w-4 h-4" />
+                  Details <ExternalLink className="ml-2 w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -280,6 +345,89 @@ const AdminProjects: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Project Chat Modal */}
+      {openChatProjectId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-navy/20 backdrop-blur-md">
+          <div className="bg-white w-full max-w-4xl h-[80vh] rounded-[3rem] shadow-2xl border border-navy/5 relative flex flex-col overflow-hidden">
+            <button 
+              onClick={() => setOpenChatProjectId(null)}
+              className="absolute top-8 right-8 p-3 bg-neutral-offwhite rounded-2xl hover:bg-navy hover:text-white transition-soft z-20"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="p-10 border-b border-navy/5 bg-white relative z-10 flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-navy text-ice rounded-2xl">
+                  <MessageCircle className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-navy tracking-tight">
+                    {projects.find(p => p.id === openChatProjectId)?.title} Relay
+                  </h2>
+                  <p className="text-xs font-bold text-navy/40 uppercase tracking-widest">Global Account Management Synchronization</p>
+                </div>
+              </div>
+              
+              <div className="mr-16">
+                <button 
+                  onClick={() => handleToggleClientChat(openChatProjectId, !projects.find(p => p.id === openChatProjectId)?.clientChatEnabled)}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-soft text-[10px] font-black uppercase tracking-widest ${projects.find(p => p.id === openChatProjectId)?.clientChatEnabled ? 'bg-ice text-white shadow-lg shadow-ice/20' : 'bg-neutral-offwhite text-navy/40 hover:bg-navy/5'}`}
+                >
+                  {projects.find(p => p.id === openChatProjectId)?.clientChatEnabled ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  <span>Client {projects.find(p => p.id === openChatProjectId)?.clientChatEnabled ? 'Live' : 'Hidden'}</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-12 space-y-6 bg-neutral-offwhite/10">
+              {projects.find(p => p.id === openChatProjectId)?.chatMessages?.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center p-12 opacity-20">
+                  <UsersIcon className="w-16 h-16 mb-4" />
+                  <p className="font-black text-xl uppercase tracking-widest">No signals detected</p>
+                </div>
+              ) : (
+                projects.find(p => p.id === openChatProjectId)?.chatMessages.map(msg => (
+                  <div key={msg.id} className={`flex flex-col ${msg.senderId === user?.id ? 'items-end' : 'items-start'}`}>
+                    <div className={`max-w-[80%] p-6 rounded-2xl shadow-sm ${msg.senderId === user?.id ? 'bg-navy text-white rounded-tr-none' : 'bg-white border border-navy/5 text-navy rounded-tl-none'}`}>
+                      <div className="flex items-center justify-between mb-2 space-x-8">
+                        <p className={`text-[9px] font-black uppercase tracking-widest ${msg.senderId === user?.id ? 'text-ice' : 'text-navy/30'}`}>
+                          {msg.senderName} • {msg.senderRole}
+                        </p>
+                        <p className={`text-[8px] font-black uppercase ${msg.senderId === user?.id ? 'text-white/30' : 'text-navy/20'}`}>
+                          {new Date(msg.timestamp).toLocaleTimeString()}
+                        </p>
+                      </div>
+                      <p className="text-sm font-semibold leading-relaxed">{msg.content}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+              <div ref={chatEndRef} />
+            </div>
+
+            <div className="p-8 bg-white border-t border-navy/5">
+              <div className="relative">
+                <input 
+                  type="text" 
+                  placeholder={`Sync with ${projects.find(p => p.id === openChatProjectId)?.clientChatEnabled ? 'Project Group' : 'Staff only'}...`}
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendProjectMessage(openChatProjectId)}
+                  className="w-full pl-6 pr-16 py-4 bg-neutral-offwhite border-2 border-transparent rounded-2xl focus:outline-none focus:border-ice focus:bg-white transition-soft font-bold text-sm"
+                />
+                <button 
+                  onClick={() => handleSendProjectMessage(openChatProjectId)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-3 text-ice hover:text-ice-dark transition-soft"
+                >
+                  <Send className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Case Study Configuration Modal */}
       {isModalOpen && (
@@ -328,6 +476,22 @@ const AdminProjects: React.FC = () => {
                 </div>
               </div>
 
+              {/* Chat Access Control */}
+              <div className="p-8 bg-neutral-offwhite rounded-[2.5rem] border border-navy/5 flex items-center justify-between">
+                <div>
+                    <h4 className="text-sm font-black text-navy uppercase tracking-widest">Client Sync Protocol</h4>
+                    <p className="text-xs font-bold text-navy/40">When enabled, the client can view and participate in the project-specific group chat.</p>
+                </div>
+                <button 
+                    type="button"
+                    onClick={() => setFormData({...formData, clientChatEnabled: !formData.clientChatEnabled})}
+                    className={`flex items-center space-x-3 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-soft ${formData.clientChatEnabled ? 'bg-green-500 text-white shadow-xl shadow-green-500/20' : 'bg-navy/10 text-navy/40'}`}
+                >
+                    {formData.clientChatEnabled ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                    <span>{formData.clientChatEnabled ? 'Relay Active' : 'Client Restricted'}</span>
+                </button>
+              </div>
+
               {/* Engineer Assignment Section */}
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
@@ -360,7 +524,7 @@ const AdminProjects: React.FC = () => {
                 </div>
               </div>
 
-              {/* Milestone Management Section (Enhanced) */}
+              {/* Milestone Management Section */}
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-navy/40">Project Milestones (Optional)</label>

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   User, 
@@ -12,247 +12,355 @@ import {
   Rocket, 
   ShieldCheck,
   Save,
-  ArrowRight
+  ArrowRight,
+  ChevronRight,
+  Circle,
+  CheckCircle2,
+  Calendar,
+  Send,
+  Mail,
+  Inbox,
+  Eye,
+  EyeOff,
+  Users as UsersIcon,
+  X,
+  MessageCircle,
+  ListTodo,
+  AlertCircle,
+  Terminal,
+  Building2,
+  Bell
 } from 'lucide-react';
 import { useAuth } from '../App';
 import { MockDB } from '../db';
+import { Project, Milestone, Inquiry, Message, UserRole, InternalMessage } from '../types';
+
+type DashboardTab = 'profile' | 'projects' | 'tasks' | 'messages';
 
 const EmployeeDashboard: React.FC = () => {
   const { user, logout } = useAuth();
-  const profile = MockDB.getProfiles().find(p => p.userId === user?.id);
-  const projects = MockDB.getProjects().filter(p => profile?.projects.includes(p.id));
+  const [activeTab, setActiveTab] = useState<DashboardTab>('profile');
+  const [activeRelayType, setActiveRelayType] = useState<'hq' | 'staff'>('hq');
   
+  const [profiles, setProfiles] = useState(MockDB.getProfiles());
+  const [projects, setProjects] = useState(MockDB.getProjects());
+  const [staffMessages, setStaffMessages] = useState(MockDB.getStaffRelay());
+  const [directMessages, setDirectMessages] = useState(user ? MockDB.getDirectAdminRelay(user.id) : []);
+  const [openChatProjectId, setOpenChatProjectId] = useState<string | null>(null);
+  
+  const profile = profiles.find(p => p.userId === user?.id);
+  const myProjects = projects.filter(p => p.teamIds.includes(user?.id || ''));
+  
+  // Profile Form State
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    bio: profile?.bio || '',
-    skills: profile?.skills.join(', ') || ''
-  });
+  const [formData, setFormData] = useState({ bio: profile?.bio || '', skills: profile?.skills.join(', ') || '' });
   const [justSubmitted, setJustSubmitted] = useState(false);
 
-  const handleUpdate = (e: React.FormEvent) => {
+  // Relay Chat State
+  const [relayInput, setRelayInput] = useState('');
+  const relayEndRef = useRef<HTMLDivElement>(null);
+
+  // Project Chat State
+  const [projectChatInput, setProjectChatInput] = useState('');
+  const projectChatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setProjects(MockDB.getProjects());
+      setProfiles(MockDB.getProfiles());
+      setStaffMessages(MockDB.getStaffRelay());
+      if (user) setDirectMessages(MockDB.getDirectAdminRelay(user.id));
+    };
+    window.addEventListener('db-update', handleUpdate);
+    return () => window.removeEventListener('db-update', handleUpdate);
+  }, [user]);
+
+  useEffect(() => {
+    if (relayEndRef.current) relayEndRef.current.scrollIntoView({ behavior: 'smooth' });
+  }, [staffMessages, directMessages, activeRelayType, activeTab]);
+
+  useEffect(() => {
+    if (projectChatEndRef.current) projectChatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+  }, [openChatProjectId, projects]);
+
+  // Mark unread logic
+  useEffect(() => {
+    if (activeTab === 'messages' && user) {
+      if (activeRelayType === 'staff') MockDB.markStaffMessagesAsRead(user.id);
+      else MockDB.markDirectAdminMessagesAsRead(user.id, user.id);
+    }
+  }, [activeTab, activeRelayType, staffMessages, directMessages, user]);
+
+  const unreadMessagesCount = (user ? [
+    ...staffMessages.filter(m => !m.readBy.includes(user.id)),
+    ...directMessages.filter(m => !m.readBy.includes(user.id))
+  ].length : 0);
+
+  const handleUpdateProfile = (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
-    
-    MockDB.requestProfileUpdate(profile.id, {
-      bio: formData.bio,
-      skills: formData.skills.split(',').map(s => s.trim()).filter(s => s !== '')
-    });
-    
+    MockDB.requestProfileUpdate(profile.id, { bio: formData.bio, skills: formData.skills.split(',').map(s => s.trim()).filter(s => s !== '') });
     setIsEditing(false);
     setJustSubmitted(true);
     setTimeout(() => setJustSubmitted(false), 5000);
   };
 
+  const toggleMilestoneStatus = (projectId: string, milestoneId: string) => {
+    const proj = projects.find(p => p.id === projectId);
+    if (!proj || !proj.milestones) return;
+    const updatedMilestones = proj.milestones.map(m => m.id === milestoneId ? { ...m, isCompleted: !m.isCompleted } : m);
+    MockDB.updateProject(projectId, { milestones: updatedMilestones });
+  };
+
+  const handleSendProjectMessage = (projectId: string) => {
+    if (!projectChatInput.trim() || !user) return;
+    MockDB.addProjectChatMessage(projectId, { senderId: user.id, senderName: user.name, senderRole: user.role, content: projectChatInput.trim(), isVisibleToClient: true });
+    setProjectChatInput('');
+  };
+
+  const handleSendRelayMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!relayInput.trim() || !user) return;
+    if (activeRelayType === 'staff') {
+      MockDB.addStaffMessage({ senderId: user.id, senderName: user.name, content: relayInput.trim() });
+    } else {
+      MockDB.addDirectAdminMessage(user.id, { senderId: user.id, senderName: user.name, content: relayInput.trim() });
+    }
+    setRelayInput('');
+  };
+
+  const ProfileView = () => (
+    <div className="space-y-10 animate-in fade-in duration-500">
+      <div className="bg-white p-12 rounded-[3rem] border border-navy/5 shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-ice/5 rounded-bl-full"></div>
+        <div className="flex items-center justify-between mb-10 relative z-10">
+          <h3 className="text-2xl font-black text-navy">Personal Dossier</h3>
+          {!isEditing ? (
+            <button onClick={() => setIsEditing(true)} className="flex items-center space-x-2 text-ice font-black hover:underline uppercase text-xs tracking-widest">
+              <Edit3 className="w-4 h-4" /> <span>Edit Bio</span>
+            </button>
+          ) : (
+            <div className="flex space-x-4">
+              <button onClick={() => setIsEditing(false)} className="text-navy/40 font-black uppercase text-xs tracking-widest">Cancel</button>
+              <button onClick={handleUpdateProfile} className="flex items-center space-x-2 text-green-600 font-black hover:underline uppercase text-xs tracking-widest">
+                <Save className="w-4 h-4" /> <span>Request Approval</span>
+              </button>
+            </div>
+          )}
+        </div>
+        {isEditing ? (
+          <form className="space-y-8 relative z-10">
+            <div className="space-y-3">
+              <label className="text-xs font-black uppercase tracking-widest text-navy/40">Bio</label>
+              <textarea value={formData.bio} onChange={(e) => setFormData({...formData, bio: e.target.value})} rows={6} className="w-full px-6 py-4 bg-neutral-offwhite border-2 border-transparent rounded-2xl focus:border-ice transition-soft font-bold" />
+            </div>
+          </form>
+        ) : (
+          <div className="space-y-10 relative z-10">
+            <div className="flex items-center space-x-8">
+              <img src={profile?.image} className="w-24 h-24 rounded-3xl object-cover border-4 border-neutral-offwhite shadow-lg" alt="" />
+              <div>
+                <h4 className="text-2xl font-black text-navy">{profile?.fullName}</h4>
+                <p className="text-ice font-black uppercase tracking-widest text-[10px]">{profile?.roleTitle}</p>
+              </div>
+            </div>
+            <p className="text-navy/70 leading-relaxed font-medium">{profile?.bio}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const TasksView = () => {
+    const allMilestones = myProjects.flatMap(p => (p.milestones || []).map(m => ({ ...m, projectTitle: p.title, projectId: p.id })));
+    const sortedMilestones = [...allMilestones].sort((a, b) => new Date(a.deadline || '').getTime() - new Date(b.deadline || '').getTime());
+    
+    return (
+      <div className="space-y-10 animate-in slide-in-from-bottom-8 duration-500">
+        <div className="grid grid-cols-1 gap-6">
+          {sortedMilestones.length === 0 ? (
+            <div className="bg-white p-20 rounded-[3rem] text-center border-2 border-dashed border-navy/5">
+              <ListTodo className="w-16 h-16 mx-auto mb-6 text-navy/10" />
+              <p className="font-black text-navy/20 uppercase tracking-widest">No Technical Tasks Queued</p>
+            </div>
+          ) : (
+            sortedMilestones.map(m => {
+              const isUrgent = m.deadline && !m.isCompleted && (new Date(m.deadline).getTime() - Date.now() < 259200000);
+              return (
+                <div key={m.id} className={`bg-white p-8 rounded-[2.5rem] border border-navy/5 shadow-xl flex items-center justify-between group transition-soft hover-lift ${isUrgent ? 'border-l-8 border-l-red-500' : ''}`}>
+                  <div className="flex items-center space-x-8">
+                    <button onClick={() => toggleMilestoneStatus(m.projectId, m.id)} className={`transition-soft ${m.isCompleted ? 'text-green-500' : 'text-navy/10 hover:text-navy/30'}`}>
+                      {m.isCompleted ? <CheckCircle2 className="w-10 h-10" /> : <Circle className="w-10 h-10" />}
+                    </button>
+                    <div>
+                      <div className="flex items-center space-x-3 mb-1">
+                        <span className="text-[10px] font-black text-ice uppercase tracking-widest">{m.projectTitle}</span>
+                        {isUrgent && <span className="flex items-center text-[8px] font-black text-red-500 uppercase tracking-widest animate-pulse"><AlertCircle className="w-3 h-3 mr-1" /> Imminent Deadline</span>}
+                      </div>
+                      <h4 className={`text-xl font-black ${m.isCompleted ? 'text-navy/20 line-through' : 'text-navy'}`}>{m.title}</h4>
+                      <p className="text-xs font-bold text-navy/40 mt-1 flex items-center">
+                        <Calendar className="w-3 h-3 mr-1.5" /> Due: {new Date(m.deadline || '').toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <div className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest ${m.isCompleted ? 'bg-green-100 text-green-700' : 'bg-neutral-offwhite text-navy/40'}`}>
+                      {m.isCompleted ? 'Verified' : 'Active'}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const MessagesView = () => {
+    const currentMessages = activeRelayType === 'hq' ? directMessages : staffMessages;
+    return (
+      <div className="h-[calc(100vh-280px)] bg-white rounded-[3rem] border border-navy/5 shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-500">
+        <div className="flex border-b border-navy/5 bg-neutral-offwhite/30">
+          <button onClick={() => setActiveRelayType('hq')} className={`flex-1 p-6 flex items-center justify-center space-x-3 font-black text-xs uppercase tracking-widest transition-soft ${activeRelayType === 'hq' ? 'bg-white text-navy border-t-4 border-ice' : 'text-navy/30 hover:bg-white/50'}`}>
+            <Building2 className="w-4 h-4" /> <span>Direct HQ Command</span>
+          </button>
+          <button onClick={() => setActiveRelayType('staff')} className={`flex-1 p-6 flex items-center justify-center space-x-3 font-black text-xs uppercase tracking-widest transition-soft ${activeRelayType === 'staff' ? 'bg-white text-navy border-t-4 border-ice' : 'text-navy/30 hover:bg-white/50'}`}>
+            <UsersIcon className="w-4 h-4" /> <span>Engineering Floor</span>
+          </button>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-12 space-y-6 bg-neutral-offwhite/10">
+          <div className="max-w-2xl mx-auto space-y-6">
+            <div className="text-center mb-10 opacity-30">
+              <div className="inline-block px-4 py-1.5 bg-navy text-white text-[9px] font-black uppercase rounded-full">Secure {activeRelayType === 'hq' ? 'P2P' : 'Staff'} Buffer</div>
+            </div>
+            {currentMessages.length === 0 ? (
+              <div className="text-center py-20 opacity-20">
+                <Terminal className="w-16 h-16 mx-auto mb-4" />
+                <p className="font-black text-sm uppercase tracking-[0.2em]">Silence on the wire</p>
+              </div>
+            ) : (
+              currentMessages.map(msg => (
+                <div key={msg.id} className={`flex flex-col ${msg.senderId === user?.id ? 'items-end' : 'items-start'}`}>
+                  <div className={`max-w-[85%] p-6 rounded-2xl shadow-sm ${msg.senderId === user?.id ? 'bg-navy text-white rounded-tr-none' : 'bg-white border border-navy/5 text-navy rounded-tl-none'}`}>
+                    <div className="flex items-center justify-between mb-2 space-x-8">
+                      <p className={`text-[9px] font-black uppercase tracking-widest ${msg.senderId === user?.id ? 'text-ice' : 'text-navy/30'}`}>{msg.senderName}</p>
+                      <p className={`text-[8px] font-black uppercase ${msg.senderId === user?.id ? 'text-white/20' : 'text-navy/20'}`}>{new Date(msg.timestamp).toLocaleTimeString()}</p>
+                    </div>
+                    <p className="text-sm font-semibold leading-relaxed">{msg.content}</p>
+                  </div>
+                </div>
+              ))
+            )}
+            <div ref={relayEndRef} />
+          </div>
+        </div>
+
+        <form onSubmit={handleSendRelayMessage} className="p-8 bg-white border-t border-navy/5">
+          <div className="max-w-2xl mx-auto relative">
+            <input 
+              type="text" placeholder={`Transmit to ${activeRelayType === 'hq' ? 'Command Admin' : 'All Staff'}...`} 
+              value={relayInput} onChange={(e) => setRelayInput(e.target.value)}
+              className="w-full pl-6 pr-16 py-4 bg-neutral-offwhite border-2 border-transparent rounded-2xl focus:border-ice transition-soft font-bold text-sm"
+            />
+            <button disabled={!relayInput.trim()} className="absolute right-4 top-1/2 -translate-y-1/2 p-3 text-ice hover:text-ice-dark transition-soft disabled:opacity-20"><Send className="w-6 h-6" /></button>
+          </div>
+        </form>
+      </div>
+    );
+  };
+
   return (
     <div className="flex min-h-screen bg-neutral-offwhite">
-      {/* Sidebar */}
-      <div className="w-72 bg-navy border-r border-white/5 flex flex-col fixed inset-y-0">
+      <div className="w-72 bg-navy border-r border-white/5 flex flex-col fixed inset-y-0 z-50">
         <div className="p-10">
           <Link to="/" className="flex items-center space-x-3 mb-16">
-            <div className="p-2 bg-ice rounded-xl shadow-lg shadow-ice/20">
-              <Rocket className="w-6 h-6 text-white" />
-            </div>
+            <div className="p-2 bg-ice rounded-xl shadow-lg shadow-ice/20"><Rocket className="w-6 h-6 text-white" /></div>
             <span className="text-2xl font-black text-white tracking-tighter">RaziqTech</span>
           </Link>
           <nav className="space-y-2">
-            <button className="w-full flex items-center space-x-4 px-6 py-4 bg-white/10 text-white rounded-2xl font-bold text-sm border-l-4 border-ice">
-              <User className="w-5 h-5 text-ice" />
-              <span>My Profile</span>
-            </button>
-            <button className="w-full flex items-center space-x-4 px-6 py-4 text-neutral-coolgray hover:text-white transition-soft font-bold text-sm">
-              <Briefcase className="w-5 h-5" />
-              <span>Assigned Projects</span>
-            </button>
-            <button className="w-full flex items-center space-x-4 px-6 py-4 text-neutral-coolgray hover:text-white transition-soft font-bold text-sm">
-              <MessageSquare className="w-5 h-5" />
-              <span>Message Center</span>
+            <button onClick={() => setActiveTab('profile')} className={`w-full flex items-center space-x-4 px-6 py-4 rounded-2xl font-bold text-sm transition-soft ${activeTab === 'profile' ? 'bg-white/10 text-white border-l-4 border-ice' : 'text-neutral-coolgray hover:text-white'}`}><User className="w-5 h-5" /> <span>Workspace</span></button>
+            <button onClick={() => setActiveTab('projects')} className={`w-full flex items-center space-x-4 px-6 py-4 rounded-2xl font-bold text-sm transition-soft ${activeTab === 'projects' ? 'bg-white/10 text-white border-l-4 border-ice' : 'text-neutral-coolgray hover:text-white'}`}><Briefcase className="w-5 h-5" /> <span>Missions</span></button>
+            <button onClick={() => setActiveTab('tasks')} className={`w-full flex items-center space-x-4 px-6 py-4 rounded-2xl font-bold text-sm transition-soft ${activeTab === 'tasks' ? 'bg-white/10 text-white border-l-4 border-ice' : 'text-neutral-coolgray hover:text-white'}`}><ListTodo className="w-5 h-5" /> <span>Task Queue</span></button>
+            <button onClick={() => setActiveTab('messages')} className={`w-full flex items-center justify-between px-6 py-4 rounded-2xl font-bold text-sm transition-soft ${activeTab === 'messages' ? 'bg-white/10 text-white border-l-4 border-ice' : 'text-neutral-coolgray hover:text-white'}`}>
+              <div className="flex items-center space-x-4"><MessageSquare className="w-5 h-5" /> <span>Internal Relay</span></div>
+              {unreadMessagesCount > 0 && <span className="bg-red-500 text-white text-[8px] font-black px-2 py-1 rounded-full animate-bounce">{unreadMessagesCount}</span>}
             </button>
           </nav>
         </div>
-        <div className="mt-auto p-8 border-t border-white/5 bg-navy-dark">
-          <button 
-            onClick={logout}
-            className="w-full flex items-center justify-center space-x-3 py-4 bg-white/5 text-white/60 rounded-2xl hover:bg-red-500/10 hover:text-red-400 transition-soft border border-white/5 font-black text-sm"
-          >
-            <LogOut className="w-5 h-5" />
-            <span>Sign Out</span>
-          </button>
+        <div className="mt-auto p-8 bg-navy-dark border-t border-white/5">
+          <div className="flex items-center space-x-4 mb-8">
+            <img src={profile?.image} className="w-10 h-10 rounded-xl object-cover border border-white/10" alt="" />
+            <div className="overflow-hidden"><p className="text-white text-xs font-black truncate">{user?.name}</p></div>
+          </div>
+          <button onClick={logout} className="w-full flex items-center justify-center space-x-3 py-4 bg-white/5 text-white/60 rounded-2xl hover:text-red-400 border border-white/5 font-black text-sm"><LogOut className="w-5 h-5" /> <span>Offline</span></button>
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="ml-72 flex-1 p-16">
         <div className="flex items-center justify-between mb-16">
           <div>
-            <h1 className="text-4xl font-black text-navy tracking-tight">Engineer Workspace</h1>
-            <p className="text-navy/50 font-bold">Welcome back, {user?.name}</p>
+            <h1 className="text-4xl font-black text-navy tracking-tight uppercase">
+              {activeTab === 'profile' && 'Engineer Console'}
+              {activeTab === 'projects' && 'Operation Manifest'}
+              {activeTab === 'tasks' && 'Mission Milestones'}
+              {activeTab === 'messages' && 'Secure Internal Relay'}
+            </h1>
+            <p className="text-navy/50 font-bold">Authenticated L2 Node: {user?.name}</p>
           </div>
-          {profile?.status === 'PENDING_APPROVAL' && (
-            <div className="bg-amber-100 text-amber-700 px-6 py-3 rounded-2xl flex items-center space-x-3 border border-amber-200 animate-pulse">
-              <Clock className="w-5 h-5" />
-              <span className="text-sm font-black uppercase tracking-widest">Changes Pending Admin Approval</span>
-            </div>
-          )}
-          {justSubmitted && (
-            <div className="bg-green-100 text-green-700 px-6 py-3 rounded-2xl flex items-center space-x-3 border border-green-200">
-              <CheckCircle className="w-5 h-5" />
-              <span className="text-sm font-black uppercase tracking-widest">Update Request Submitted</span>
-            </div>
-          )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          {/* Profile Card */}
-          <div className="lg:col-span-2 space-y-10">
-            <div className="bg-white p-12 rounded-[3rem] border border-navy/5 shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-ice/5 rounded-bl-full"></div>
-              
-              <div className="flex items-center justify-between mb-10 relative z-10">
-                <h3 className="text-2xl font-black text-navy">Personal Dossier</h3>
-                {!isEditing ? (
-                  <button 
-                    onClick={() => setIsEditing(true)}
-                    className="flex items-center space-x-2 text-ice font-black hover:underline uppercase text-xs tracking-widest"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                    <span>Edit Bio</span>
-                  </button>
-                ) : (
-                  <div className="flex space-x-4">
-                    <button 
-                      onClick={() => setIsEditing(false)}
-                      className="text-navy/40 font-black uppercase text-xs tracking-widest"
-                    >
-                      Cancel
-                    </button>
-                    <button 
-                      onClick={handleUpdate}
-                      className="flex items-center space-x-2 text-green-600 font-black hover:underline uppercase text-xs tracking-widest"
-                    >
-                      <Save className="w-4 h-4" />
-                      <span>Request Approval</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {isEditing ? (
-                <form className="space-y-8 relative z-10">
-                  <div className="space-y-3">
-                    <label className="text-xs font-black uppercase tracking-widest text-navy/40">Professional Bio</label>
-                    <textarea 
-                      value={formData.bio}
-                      onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                      rows={6}
-                      className="w-full px-6 py-4 bg-neutral-offwhite border-2 border-transparent rounded-2xl focus:outline-none focus:border-ice focus:bg-white transition-soft font-bold"
-                    />
-                  </div>
-                  <div className="space-y-3">
-                    <label className="text-xs font-black uppercase tracking-widest text-navy/40">Technical Skills (Comma separated)</label>
-                    <input 
-                      type="text"
-                      value={formData.skills}
-                      onChange={(e) => setFormData({...formData, skills: e.target.value})}
-                      className="w-full px-6 py-4 bg-neutral-offwhite border-2 border-transparent rounded-2xl focus:outline-none focus:border-ice focus:bg-white transition-soft font-bold"
-                    />
-                  </div>
-                </form>
-              ) : (
-                <div className="space-y-10 relative z-10">
+        {activeTab === 'profile' && <ProfileView />}
+        {activeTab === 'projects' && (
+          <div className="grid grid-cols-1 gap-12 pb-24 animate-in slide-in-from-right-8 duration-500">
+            {myProjects.map(proj => (
+              <div key={proj.id} className="bg-white rounded-[3rem] border border-navy/5 overflow-hidden shadow-xl">
+                <div className="p-10 bg-navy text-white flex items-center justify-between">
+                  <div><h3 className="text-3xl font-black tracking-tight">{proj.title}</h3><p className="text-ice text-xs font-black uppercase tracking-widest mt-1">{proj.category} Domain</p></div>
                   <div className="flex items-center space-x-8">
-                    <img src={profile?.image} className="w-24 h-24 rounded-3xl object-cover border-4 border-neutral-offwhite shadow-lg" alt="" />
-                    <div>
-                      <h4 className="text-2xl font-black text-navy">{profile?.fullName}</h4>
-                      <p className="text-ice font-black uppercase tracking-widest text-[10px]">{profile?.roleTitle}</p>
-                    </div>
-                  </div>
-                  <div className="space-y-8">
-                    <div>
-                      <p className="text-xs font-black uppercase tracking-widest text-navy/30 mb-4">Biography</p>
-                      <p className="text-navy/70 leading-relaxed font-medium">{profile?.bio}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-black uppercase tracking-widest text-navy/30 mb-4">Skill Manifest</p>
-                      <div className="flex flex-wrap gap-2">
-                        {profile?.skills.map((s, i) => (
-                          <span key={i} className="px-4 py-2 bg-neutral-offwhite text-navy font-bold text-xs rounded-xl border border-navy/5">
-                            {s}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+                    <button onClick={() => setOpenChatProjectId(proj.id)} className="flex items-center space-x-3 px-6 py-3 bg-ice text-white rounded-2xl font-black text-xs uppercase shadow-xl hover:bg-ice-dark transition-soft"><MessageCircle className="w-4 h-4" /> <span>Sync Client</span></button>
+                    <div className="text-right"><div className="text-4xl font-black text-ice">{proj.progress}%</div></div>
                   </div>
                 </div>
-              )}
-            </div>
+                <div className="p-10"><p className="text-navy/60 font-medium leading-relaxed">{proj.description}</p></div>
+              </div>
+            ))}
+          </div>
+        )}
+        {activeTab === 'tasks' && <TasksView />}
+        {activeTab === 'messages' && <MessagesView />}
 
-            <div className="bg-white p-12 rounded-[3rem] border border-navy/5 shadow-xl">
-              <h3 className="text-2xl font-black text-navy mb-10">Active Missions</h3>
-              <div className="space-y-6">
-                {projects.map(proj => (
-                  <div key={proj.id} className="p-8 bg-neutral-offwhite/50 border border-navy/5 rounded-[2rem] flex items-center justify-between group">
-                    <div className="flex items-center space-x-6">
-                      <div className="w-16 h-16 bg-navy text-ice rounded-2xl flex items-center justify-center font-black">
-                        {proj.progress}%
-                      </div>
-                      <div>
-                        <h4 className="text-xl font-black text-navy">{proj.title}</h4>
-                        <p className="text-xs font-black text-navy/40 uppercase tracking-widest">{proj.status}</p>
-                      </div>
+        {openChatProjectId && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-navy/20 backdrop-blur-md">
+            <div className="bg-white w-full max-w-4xl h-[80vh] rounded-[3rem] shadow-2xl border border-navy/5 relative flex flex-col overflow-hidden">
+              <button onClick={() => setOpenChatProjectId(null)} className="absolute top-8 right-8 p-3 bg-neutral-offwhite rounded-2xl hover:bg-navy hover:text-white transition-soft z-20"><X className="w-6 h-6" /></button>
+              <div className="p-10 border-b border-navy/5 bg-white relative z-10 flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-navy text-ice rounded-2xl"><MessageCircle className="w-6 h-6" /></div>
+                  <h2 className="text-2xl font-black text-navy tracking-tight">{projects.find(p => p.id === openChatProjectId)?.title} Client Relay</h2>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-12 space-y-6 bg-neutral-offwhite/10">
+                {projects.find(p => p.id === openChatProjectId)?.chatMessages.map(msg => (
+                  <div key={msg.id} className={`flex flex-col ${msg.senderId === user?.id ? 'items-end' : 'items-start'}`}>
+                    <div className={`max-w-[80%] p-6 rounded-2xl shadow-sm ${msg.senderId === user?.id ? 'bg-navy text-white rounded-tr-none' : 'bg-white border border-navy/5 text-navy rounded-tl-none'}`}>
+                      <p className="text-[9px] font-black uppercase tracking-widest opacity-50 mb-2">{msg.senderName}</p>
+                      <p className="text-sm font-semibold">{msg.content}</p>
                     </div>
-                    <button className="p-3 bg-white text-navy rounded-xl border border-navy/5 hover:border-ice hover:text-ice transition-soft shadow-sm group-hover:translate-x-1">
-                      <ArrowRight className="w-5 h-5" />
-                    </button>
                   </div>
                 ))}
+                <div ref={projectChatEndRef} />
+              </div>
+              <div className="p-8 bg-white border-t border-navy/5">
+                <div className="relative">
+                  <input type="text" placeholder="Sync with client..." value={projectChatInput} onChange={(e) => setProjectChatInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendProjectMessage(openChatProjectId)} className="w-full px-6 py-4 bg-neutral-offwhite border-2 border-transparent rounded-2xl focus:border-ice transition-soft font-bold text-sm" />
+                  <button onClick={() => handleSendProjectMessage(openChatProjectId)} className="absolute right-4 top-1/2 -translate-y-1/2 p-3 text-ice hover:text-ice-dark transition-soft"><Send className="w-6 h-6" /></button>
+                </div>
               </div>
             </div>
           </div>
-
-          {/* Stats / Notification Column */}
-          <div className="space-y-10">
-             <div className="bg-navy p-10 rounded-[3rem] text-white shadow-2xl relative overflow-hidden">
-                <div className="relative z-10">
-                  <h4 className="text-xl font-black mb-6">Internal Broadcast</h4>
-                  <div className="space-y-6">
-                    <div className="p-5 bg-white/5 border border-white/10 rounded-2xl">
-                      <p className="text-ice text-[10px] font-black uppercase tracking-widest mb-2">Announcement</p>
-                      <p className="text-sm font-medium text-white/70 leading-relaxed">Quarterly engineering review starts next Monday. Sync all repositories.</p>
-                    </div>
-                    <div className="p-5 bg-white/5 border border-white/10 rounded-2xl">
-                      <p className="text-ice text-[10px] font-black uppercase tracking-widest mb-2">Infrastructure</p>
-                      <p className="text-sm font-medium text-white/70 leading-relaxed">AWS Staging region migration complete. Update your .env configs.</p>
-                    </div>
-                  </div>
-                </div>
-                <ShieldCheck className="absolute -bottom-10 -right-10 w-48 h-48 text-white/5" />
-             </div>
-
-             <div className="bg-white p-10 rounded-[3rem] border border-navy/5 shadow-xl">
-                <h4 className="text-xl font-black text-navy mb-8">Personal Performance</h4>
-                <div className="space-y-8 font-bold">
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-xs uppercase tracking-widest text-navy/40">
-                      <span>Commit Velocity</span>
-                      <span className="text-navy">High</span>
-                    </div>
-                    <div className="h-2 bg-neutral-offwhite rounded-full overflow-hidden">
-                      <div className="h-full bg-ice w-[85%]"></div>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-xs uppercase tracking-widest text-navy/40">
-                      <span>Peer Review Score</span>
-                      <span className="text-navy">4.9/5</span>
-                    </div>
-                    <div className="h-2 bg-neutral-offwhite rounded-full overflow-hidden">
-                      <div className="h-full bg-navy w-[95%]"></div>
-                    </div>
-                  </div>
-                </div>
-             </div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
