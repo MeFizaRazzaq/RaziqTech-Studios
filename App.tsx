@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, createContext, useContext } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { User, UserRole, AuthState } from './types';
 import { MockDB } from './db';
 
@@ -17,17 +17,22 @@ import Portfolio from './pages/Portfolio';
 import Contact from './pages/Contact';
 import EmployeeProfilePage from './pages/EmployeeProfile';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
 
-// Admin Pages
+// Dashboards
 import AdminDashboard from './pages/AdminDashboard';
 import AdminEmployees from './pages/AdminEmployees';
 import AdminProjects from './pages/AdminProjects';
 import AdminInquiries from './pages/AdminInquiries';
+import EmployeeDashboard from './pages/EmployeeDashboard';
+import ClientDashboard from './pages/ClientDashboard';
 
 // Auth Context
 interface AuthContextType extends AuthState {
-  login: (email: string) => void;
+  // Corrected return type from void to User | null to match implementation
+  login: (email: string) => User | null;
   logout: () => void;
+  signup: (name: string, email: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -55,8 +60,20 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     if (found) {
       setUser(found);
       localStorage.setItem('raziqtech_session', JSON.stringify({ email }));
+      return found;
     } else {
-      alert('Invalid credentials (Try admin@raziqtech.com)');
+      alert('Invalid credentials. Try: admin@raziqtech.com, jane@raziqtech.com, or client@enterprise.com');
+      return null;
+    }
+  };
+
+  const signup = (name: string, email: string) => {
+    try {
+      const newUser = MockDB.signupClient(name, email);
+      setUser(newUser);
+      localStorage.setItem('raziqtech_session', JSON.stringify({ email }));
+    } catch (e: any) {
+      alert(e.message);
     }
   };
 
@@ -66,17 +83,23 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, signup }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
 // Route Guards
-const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRole?: UserRole }> = ({ children, allowedRole }) => {
+const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles: UserRole[] }> = ({ children, allowedRoles }) => {
   const { user, isAuthenticated } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (allowedRole && user?.role !== allowedRole) return <Navigate to="/" replace />;
+  if (!allowedRoles.includes(user!.role)) {
+    // Redirect based on role
+    if (user!.role === UserRole.ADMIN) return <Navigate to="/admin" />;
+    if (user!.role === UserRole.EMPLOYEE) return <Navigate to="/employee-dashboard" />;
+    if (user!.role === UserRole.CLIENT) return <Navigate to="/client-dashboard" />;
+    return <Navigate to="/" />;
+  }
   return <>{children}</>;
 };
 
@@ -103,26 +126,41 @@ const App: React.FC = () => {
             <Route path="/portfolio" element={<Layout><Portfolio /></Layout>} />
             <Route path="/contact" element={<Layout><Contact /></Layout>} />
             <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
 
             {/* Admin Routes */}
             <Route path="/admin" element={
-              <ProtectedRoute allowedRole={UserRole.ADMIN}>
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
                 <AdminDashboard />
               </ProtectedRoute>
             } />
             <Route path="/admin/employees" element={
-              <ProtectedRoute allowedRole={UserRole.ADMIN}>
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
                 <AdminEmployees />
               </ProtectedRoute>
             } />
             <Route path="/admin/projects" element={
-              <ProtectedRoute allowedRole={UserRole.ADMIN}>
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
                 <AdminProjects />
               </ProtectedRoute>
             } />
             <Route path="/admin/inquiries" element={
-              <ProtectedRoute allowedRole={UserRole.ADMIN}>
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
                 <AdminInquiries />
+              </ProtectedRoute>
+            } />
+
+            {/* Employee Routes */}
+            <Route path="/employee-dashboard" element={
+              <ProtectedRoute allowedRoles={[UserRole.EMPLOYEE]}>
+                <EmployeeDashboard />
+              </ProtectedRoute>
+            } />
+
+            {/* Client Routes */}
+            <Route path="/client-dashboard" element={
+              <ProtectedRoute allowedRoles={[UserRole.CLIENT]}>
+                <ClientDashboard />
               </ProtectedRoute>
             } />
 
@@ -136,16 +174,16 @@ const App: React.FC = () => {
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { pathname } = useLocation();
-  const isAdminPath = pathname.startsWith('/admin');
+  const isDashboard = pathname.startsWith('/admin') || pathname === '/employee-dashboard' || pathname === '/client-dashboard';
 
   return (
     <>
-      {!isAdminPath && <Navbar />}
+      {!isDashboard && <Navbar />}
       <main className="flex-grow">
         {children}
       </main>
-      {!isAdminPath && <Footer />}
-      {!isAdminPath && <FloatingChat />}
+      {!isDashboard && <Footer />}
+      {!isDashboard && <FloatingChat />}
     </>
   );
 };

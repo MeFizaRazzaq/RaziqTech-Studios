@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import AdminSidebar from '../components/AdminSidebar';
 import { 
   TrendingUp, 
@@ -9,7 +9,9 @@ import {
   Eye,
   ArrowUpRight,
   Rocket,
-  Activity
+  Activity,
+  XCircle,
+  Clock
 } from 'lucide-react';
 import { MockDB } from '../db';
 
@@ -17,6 +19,7 @@ const AdminDashboard: React.FC = () => {
   const inquiries = MockDB.getInquiries();
   const projects = MockDB.getProjects();
   const employees = MockDB.getProfiles();
+  const [pendingUpdates, setPendingUpdates] = useState(MockDB.getPendingUpdates());
 
   const stats = [
     { name: 'Lead Engineers', value: employees.length, icon: <Users className="w-6 h-6" />, color: 'bg-ice' },
@@ -24,6 +27,16 @@ const AdminDashboard: React.FC = () => {
     { name: 'Active Case Studies', value: projects.length, icon: <TrendingUp className="w-6 h-6" />, color: 'bg-ice' },
     { name: 'Conversion Rate', value: '24%', icon: <Activity className="w-6 h-6" />, color: 'bg-navy' },
   ];
+
+  const handleApprove = (id: string) => {
+    MockDB.approveProfileUpdate(id);
+    setPendingUpdates(MockDB.getPendingUpdates());
+  };
+
+  const handleReject = (id: string) => {
+    MockDB.rejectProfileUpdate(id);
+    setPendingUpdates(MockDB.getPendingUpdates());
+  };
 
   return (
     <div className="pl-72 min-h-screen bg-neutral-offwhite">
@@ -59,30 +72,81 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          {/* Recent Inquiries */}
-          <div className="lg:col-span-2 bg-white rounded-[3rem] border border-navy/5 overflow-hidden shadow-xl">
-            <div className="p-10 border-b border-navy/5 flex items-center justify-between">
-              <h3 className="font-black text-2xl text-navy">Priority Leads</h3>
-              <button className="text-ice text-sm font-black hover:underline">View CRM</button>
-            </div>
-            <div className="divide-y divide-navy/5">
-              {inquiries.slice(0, 5).map((inq) => (
-                <div key={inq.id} className="p-10 hover:bg-neutral-offwhite/50 transition-soft flex items-center justify-between">
-                  <div className="flex items-center space-x-6">
-                    <div className="w-14 h-14 bg-navy text-white rounded-2xl flex items-center justify-center font-black text-xl">
-                      {inq.name.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-lg font-black text-navy">{inq.name}</p>
-                      <p className="text-sm text-navy/50 font-bold">{inq.projectType}</p>
-                    </div>
+          <div className="lg:col-span-2 space-y-10">
+            {/* Profile Update Approvals */}
+            {pendingUpdates.length > 0 && (
+              <div className="bg-white rounded-[3rem] border border-navy/5 overflow-hidden shadow-xl border-t-8 border-t-amber-400">
+                <div className="p-10 border-b border-navy/5 flex items-center justify-between">
+                  <div>
+                    <h3 className="font-black text-2xl text-navy">Pending Profile Approvals</h3>
+                    <p className="text-navy/40 text-sm font-bold">Action required for employee manifest updates.</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-black text-ice mb-2">{inq.budget}</p>
-                    <span className="px-3 py-1 bg-ice/10 text-ice text-[10px] font-black uppercase tracking-widest rounded-lg">Verification Pending</span>
-                  </div>
+                  <Clock className="w-8 h-8 text-amber-400" />
                 </div>
-              ))}
+                <div className="divide-y divide-navy/5">
+                  {pendingUpdates.map((update) => {
+                    const employee = employees.find(e => e.id === update.employeeId);
+                    return (
+                      <div key={update.id} className="p-10 hover:bg-neutral-offwhite/50 transition-soft">
+                        <div className="flex items-center justify-between mb-6">
+                          <div className="flex items-center space-x-6">
+                            <img src={employee?.image} className="w-14 h-14 rounded-2xl object-cover" alt="" />
+                            <div>
+                              <p className="text-lg font-black text-navy">{employee?.fullName}</p>
+                              <p className="text-sm text-navy/40 font-bold">Requested on {new Date(update.createdAt).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                          <div className="flex space-x-3">
+                            <button 
+                              onClick={() => handleReject(update.id)}
+                              className="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-soft"
+                            >
+                              <XCircle className="w-5 h-5" />
+                            </button>
+                            <button 
+                              onClick={() => handleApprove(update.id)}
+                              className="px-6 py-3 bg-green-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-green-700 transition-soft flex items-center space-x-2"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                              <span>Authorize</span>
+                            </button>
+                          </div>
+                        </div>
+                        <div className="bg-neutral-offwhite p-6 rounded-2xl text-sm italic text-navy/60 border border-navy/5">
+                          "{update.changes.bio?.substring(0, 150)}..."
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Recent Inquiries */}
+            <div className="bg-white rounded-[3rem] border border-navy/5 overflow-hidden shadow-xl">
+              <div className="p-10 border-b border-navy/5 flex items-center justify-between">
+                <h3 className="font-black text-2xl text-navy">Priority Leads</h3>
+                <button className="text-ice text-sm font-black hover:underline">View CRM</button>
+              </div>
+              <div className="divide-y divide-navy/5">
+                {inquiries.slice(0, 5).map((inq) => (
+                  <div key={inq.id} className="p-10 hover:bg-neutral-offwhite/50 transition-soft flex items-center justify-between">
+                    <div className="flex items-center space-x-6">
+                      <div className="w-14 h-14 bg-navy text-white rounded-2xl flex items-center justify-center font-black text-xl">
+                        {inq.name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-lg font-black text-navy">{inq.name}</p>
+                        <p className="text-sm text-navy/50 font-bold">{inq.projectType}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-black text-ice mb-2">{inq.budget}</p>
+                      <span className="px-3 py-1 bg-ice/10 text-ice text-[10px] font-black uppercase tracking-widest rounded-lg">Verification Pending</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 

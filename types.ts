@@ -1,7 +1,8 @@
 
 export enum UserRole {
   ADMIN = 'ADMIN',
-  EMPLOYEE = 'EMPLOYEE'
+  EMPLOYEE = 'EMPLOYEE',
+  CLIENT = 'CLIENT'
 }
 
 export interface User {
@@ -10,6 +11,7 @@ export interface User {
   name: string;
   role: UserRole;
   avatar?: string;
+  createdAt: string;
 }
 
 export interface EmployeeProfile {
@@ -25,6 +27,14 @@ export interface EmployeeProfile {
   image: string;
   chatEnabled: boolean;
   projects: string[]; // Project IDs
+  status: 'APPROVED' | 'PENDING_APPROVAL';
+}
+
+export interface ProfileUpdateEntry {
+  id: string;
+  employeeId: string;
+  changes: Partial<Omit<EmployeeProfile, 'id' | 'userId' | 'status'>>;
+  createdAt: string;
 }
 
 export interface Project {
@@ -38,16 +48,19 @@ export interface Project {
   techStack: string[];
   imageUrl: string;
   teamIds: string[]; // User IDs
+  progress: number; // 0-100
+  status: 'IN_PLANNING' | 'IN_DEVELOPMENT' | 'STAGING' | 'COMPLETED';
 }
 
 export interface Inquiry {
   id: string;
+  clientId?: string; // Link to client user if logged in
   name: string;
   email: string;
   projectType: string;
   budget: string;
   message: string;
-  status: 'New' | 'Read' | 'Archived';
+  status: 'New' | 'Read' | 'Archived' | 'Converted';
   createdAt: string;
 }
 
