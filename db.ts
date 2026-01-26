@@ -112,6 +112,75 @@ export const MockDB = {
   getInquiries: () => getDB().inquiries,
   getPendingUpdates: () => getDB().pendingUpdates,
 
+  // Employee CRUD
+  addEmployee: (user: Omit<User, 'id' | 'createdAt'>, profile: Omit<EmployeeProfile, 'id' | 'userId' | 'status'>) => {
+    const db = getDB();
+    const userId = Math.random().toString(36).substr(2, 9);
+    const profileId = 'p' + Math.random().toString(36).substr(2, 9);
+    
+    const newUser: User = { ...user, id: userId, createdAt: new Date().toISOString() };
+    const newProfile: EmployeeProfile = { ...profile, id: profileId, userId, status: 'APPROVED' };
+    
+    db.users.push(newUser);
+    db.profiles.push(newProfile);
+    saveDB(db);
+    return { user: newUser, profile: newProfile };
+  },
+
+  updateEmployee: (profileId: string, updates: Partial<EmployeeProfile>, userUpdates: Partial<User>) => {
+    const db = getDB();
+    const profileIdx = db.profiles.findIndex(p => p.id === profileId);
+    if (profileIdx === -1) return;
+
+    const profile = db.profiles[profileIdx];
+    db.profiles[profileIdx] = { ...profile, ...updates };
+
+    const userIdx = db.users.findIndex(u => u.id === profile.userId);
+    if (userIdx !== -1) {
+      db.users[userIdx] = { ...db.users[userIdx], ...userUpdates };
+    }
+
+    saveDB(db);
+  },
+
+  deleteEmployee: (profileId: string) => {
+    const db = getDB();
+    const profile = db.profiles.find(p => p.id === profileId);
+    if (!profile) return;
+
+    db.profiles = db.profiles.filter(p => p.id !== profileId);
+    db.users = db.users.filter(u => u.id !== profile.userId);
+    saveDB(db);
+  },
+
+  // Project CRUD
+  addProject: (proj: Omit<Project, 'id'>) => {
+    const db = getDB();
+    const newProj: Project = {
+      ...proj,
+      id: 'proj' + Math.random().toString(36).substr(2, 9)
+    };
+    db.projects.push(newProj);
+    saveDB(db);
+    return newProj;
+  },
+
+  updateProject: (id: string, updates: Partial<Project>) => {
+    const db = getDB();
+    const idx = db.projects.findIndex(p => p.id === id);
+    if (idx !== -1) {
+      db.projects[idx] = { ...db.projects[idx], ...updates };
+      saveDB(db);
+    }
+  },
+
+  deleteProject: (id: string) => {
+    const db = getDB();
+    db.projects = db.projects.filter(p => p.id !== id);
+    saveDB(db);
+  },
+
+  // Other Existing Methods
   signupClient: (name: string, email: string) => {
     const db = getDB();
     if (db.users.find(u => u.email === email)) throw new Error("Email already exists");
@@ -194,19 +263,5 @@ export const MockDB = {
     
     db.pendingUpdates.splice(updateIdx, 1);
     saveDB(db);
-  },
-
-  addEmployee: (user: Omit<User, 'id' | 'createdAt'>, profile: Omit<EmployeeProfile, 'id' | 'userId' | 'status'>) => {
-    const db = getDB();
-    const userId = Math.random().toString(36).substr(2, 9);
-    const profileId = 'p' + Math.random().toString(36).substr(2, 9);
-    
-    const newUser: User = { ...user, id: userId, createdAt: new Date().toISOString() };
-    const newProfile: EmployeeProfile = { ...profile, id: profileId, userId, status: 'APPROVED' };
-    
-    db.users.push(newUser);
-    db.profiles.push(newProfile);
-    saveDB(db);
-    return { user: newUser, profile: newProfile };
   }
 };
