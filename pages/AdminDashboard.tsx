@@ -11,7 +11,10 @@ import {
   Rocket,
   Activity,
   XCircle,
-  Clock
+  Clock,
+  Printer,
+  FileText,
+  BarChart3
 } from 'lucide-react';
 import { MockDB } from '../db';
 
@@ -38,25 +41,58 @@ const AdminDashboard: React.FC = () => {
     setPendingUpdates(MockDB.getPendingUpdates());
   };
 
+  const handleGenerateReport = () => {
+    window.print();
+  };
+
   return (
     <div className="pl-72 min-h-screen bg-neutral-offwhite">
-      <AdminSidebar />
+      <div className="no-print">
+        <AdminSidebar />
+      </div>
+
+      {/* Print-Only Report Header */}
+      <div className="print-only mb-12 border-b-4 border-navy pb-8">
+        <div className="flex justify-between items-end">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-navy rounded-xl">
+              <Rocket className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-black text-navy tracking-tight">RaziqTech Studios</h1>
+              <p className="text-navy/40 font-bold uppercase tracking-widest text-xs">Intelligence Manifest & Performance Report</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="font-black text-navy">Generated: {new Date().toLocaleString()}</p>
+            <p className="text-navy/40 text-xs font-bold uppercase">System Auth: Root Admin</p>
+          </div>
+        </div>
+      </div>
+
       <div className="p-16">
-        <div className="flex items-center justify-between mb-16">
+        {/* Dashboard Actions */}
+        <div className="flex items-center justify-between mb-16 no-print">
           <div>
             <h1 className="text-4xl font-black text-navy tracking-tight">System Overview</h1>
             <p className="text-navy/50 font-bold">Authenticated as Root Administrator</p>
           </div>
           <div className="flex space-x-5">
             <div className="bg-white px-6 py-3 rounded-2xl border border-navy/5 text-sm font-black text-navy flex items-center shadow-sm">
+              <Clock className="w-4 h-4 mr-2 text-ice" />
               Session: 04:22:10
             </div>
-            <button className="bg-ice text-white px-6 py-3 rounded-2xl font-black text-sm shadow-xl shadow-ice/20 hover:bg-ice-dark transition-soft">
+            <button 
+              onClick={handleGenerateReport}
+              className="bg-ice text-white px-6 py-3 rounded-2xl font-black text-sm shadow-xl shadow-ice/20 hover:bg-ice-dark transition-soft flex items-center"
+            >
+              <Printer className="w-4 h-4 mr-2" />
               Generate Report
             </button>
           </div>
         </div>
 
+        {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-16">
           {stats.map((stat) => (
             <div key={stat.name} className="bg-white p-10 rounded-[2.5rem] border border-navy/5 shadow-xl flex items-center justify-between hover-lift transition-soft group">
@@ -64,7 +100,7 @@ const AdminDashboard: React.FC = () => {
                 <p className="text-navy/40 text-[10px] font-black uppercase tracking-[0.2em] mb-3">{stat.name}</p>
                 <p className="text-4xl font-black text-navy">{stat.value}</p>
               </div>
-              <div className={`${stat.color} p-4 rounded-2xl text-white shadow-lg group-hover:scale-110 transition-soft`}>
+              <div className={`${stat.color} p-4 rounded-2xl text-white shadow-lg group-hover:scale-110 transition-soft no-print`}>
                 {stat.icon}
               </div>
             </div>
@@ -73,9 +109,9 @@ const AdminDashboard: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           <div className="lg:col-span-2 space-y-10">
-            {/* Profile Update Approvals */}
+            {/* Profile Update Approvals - Hidden during print unless needed, but usually we hide pending actions in a formal report */}
             {pendingUpdates.length > 0 && (
-              <div className="bg-white rounded-[3rem] border border-navy/5 overflow-hidden shadow-xl border-t-8 border-t-amber-400">
+              <div className="bg-white rounded-[3rem] border border-navy/5 overflow-hidden shadow-xl border-t-8 border-t-amber-400 no-print">
                 <div className="p-10 border-b border-navy/5 flex items-center justify-between">
                   <div>
                     <h3 className="font-black text-2xl text-navy">Pending Profile Approvals</h3>
@@ -122,36 +158,68 @@ const AdminDashboard: React.FC = () => {
               </div>
             )}
 
-            {/* Recent Inquiries */}
+            {/* Recent Inquiries / Priority Leads - Styled for Print */}
             <div className="bg-white rounded-[3rem] border border-navy/5 overflow-hidden shadow-xl">
               <div className="p-10 border-b border-navy/5 flex items-center justify-between">
-                <h3 className="font-black text-2xl text-navy">Priority Leads</h3>
-                <button className="text-ice text-sm font-black hover:underline">View CRM</button>
+                <div className="flex items-center space-x-3">
+                  <BarChart3 className="w-6 h-6 text-ice print-only" />
+                  <h3 className="font-black text-2xl text-navy">Priority Lead Manifest</h3>
+                </div>
+                <button className="text-ice text-sm font-black hover:underline no-print">View CRM</button>
               </div>
               <div className="divide-y divide-navy/5">
-                {inquiries.slice(0, 5).map((inq) => (
+                {inquiries.slice(0, 8).map((inq) => (
                   <div key={inq.id} className="p-10 hover:bg-neutral-offwhite/50 transition-soft flex items-center justify-between">
                     <div className="flex items-center space-x-6">
-                      <div className="w-14 h-14 bg-navy text-white rounded-2xl flex items-center justify-center font-black text-xl">
+                      <div className="w-14 h-14 bg-navy text-white rounded-2xl flex items-center justify-center font-black text-xl no-print">
                         {inq.name.charAt(0)}
                       </div>
                       <div>
                         <p className="text-lg font-black text-navy">{inq.name}</p>
-                        <p className="text-sm text-navy/50 font-bold">{inq.projectType}</p>
+                        <p className="text-sm text-navy/50 font-bold">{inq.projectType} — {inq.email}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-black text-ice mb-2">{inq.budget}</p>
-                      <span className="px-3 py-1 bg-ice/10 text-ice text-[10px] font-black uppercase tracking-widest rounded-lg">Verification Pending</span>
+                      <span className="px-3 py-1 bg-ice/10 text-ice text-[10px] font-black uppercase tracking-widest rounded-lg">
+                        {inq.status}
+                      </span>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
+
+            {/* Print-only Project Roadmap */}
+            <div className="print-only bg-white rounded-2xl border border-navy/5 overflow-hidden mt-10">
+              <div className="p-10 border-b border-navy/5">
+                <h3 className="font-black text-2xl text-navy">Active Project Roadmap</h3>
+              </div>
+              <div className="p-10">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-navy/10">
+                      <th className="py-4 text-[10px] font-black uppercase tracking-widest">Project Identifier</th>
+                      <th className="py-4 text-[10px] font-black uppercase tracking-widest text-center">Velocity</th>
+                      <th className="py-4 text-[10px] font-black uppercase tracking-widest text-right">Technical Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-navy/5">
+                    {projects.map(proj => (
+                      <tr key={proj.id}>
+                        <td className="py-4 font-bold text-navy">{proj.title}</td>
+                        <td className="py-4 text-center font-black text-ice">{proj.progress}%</td>
+                        <td className="py-4 text-right text-xs font-black uppercase tracking-tighter text-navy/40">{proj.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
-          {/* Quick Actions & Health */}
-          <div className="space-y-10">
+          {/* Sidebar / Health - Hidden during print to focus on primary lists */}
+          <div className="space-y-10 no-print">
             <div className="bg-white p-10 rounded-[3rem] border border-navy/5 shadow-xl">
               <h3 className="font-black text-xl text-navy mb-8">Infrastructure Load</h3>
               <div className="space-y-8 font-bold">
@@ -187,6 +255,11 @@ const AdminDashboard: React.FC = () => {
               <Rocket className="absolute -bottom-10 -right-10 w-48 h-48 text-white/5 -rotate-12" />
             </div>
           </div>
+        </div>
+
+        {/* Print Footer */}
+        <div className="print-only mt-24 text-center text-navy/20 text-[10px] font-black uppercase tracking-[0.5em]">
+          End of Document — RaziqTech Internal Proprietary Data
         </div>
       </div>
     </div>
