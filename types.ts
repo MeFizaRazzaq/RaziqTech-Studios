@@ -22,6 +22,15 @@ export interface Milestone {
   assignedEngineerId?: string; // User ID
 }
 
+export interface Message {
+  id: string;
+  senderName: string;
+  senderEmail: string;
+  content: string;
+  timestamp: string;
+  isAdmin: boolean;
+}
+
 export interface EmployeeProfile {
   id: string;
   userId: string;
@@ -71,8 +80,9 @@ export interface Inquiry {
   projectType: string;
   budget: string;
   message: string;
-  status: 'New' | 'Read' | 'Archived' | 'Converted';
+  status: 'New' | 'Read' | 'Archived' | 'Converted' | 'Replied';
   createdAt: string;
+  thread?: Message[];
 }
 
 export interface AuthState {

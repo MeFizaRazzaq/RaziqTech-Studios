@@ -1,5 +1,5 @@
 
-import { User, UserRole, EmployeeProfile, Project, Inquiry, ProfileUpdateEntry } from './types';
+import { User, UserRole, EmployeeProfile, Project, Inquiry, ProfileUpdateEntry, Message } from './types';
 
 const STORAGE_KEY = 'raziqtech_db_v2';
 
@@ -94,8 +94,9 @@ const initialDB: DB = {
       projectType: 'Mobile Development',
       budget: '$50,000 - $100,000',
       message: 'Looking to build a neo-bank app for youth.',
-      status: 'Read',
-      createdAt: new Date().toISOString()
+      status: 'New',
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+      thread: []
     }
   ]
 };
@@ -184,7 +185,57 @@ export const MockDB = {
     saveDB(db);
   },
 
-  // Other Existing Methods
+  // Inquiry & Email Mocking
+  addReplyToInquiry: (inquiryId: string, message: Omit<Message, 'id' | 'timestamp'>) => {
+    const db = getDB();
+    const idx = db.inquiries.findIndex(i => i.id === inquiryId);
+    if (idx === -1) return;
+
+    const newMessage: Message = {
+      ...message,
+      id: Math.random().toString(36).substr(2, 9),
+      timestamp: new Date().toISOString()
+    };
+
+    if (!db.inquiries[idx].thread) db.inquiries[idx].thread = [];
+    db.inquiries[idx].thread!.push(newMessage);
+    db.inquiries[idx].status = 'Replied';
+    saveDB(db);
+
+    // Simulate Client Response after 2 seconds
+    if (message.isAdmin) {
+      setTimeout(() => {
+        const currentDb = getDB();
+        const freshIdx = currentDb.inquiries.findIndex(i => i.id === inquiryId);
+        if (freshIdx === -1) return;
+        
+        const clientReply: Message = {
+          id: Math.random().toString(36).substr(2, 9),
+          senderName: currentDb.inquiries[freshIdx].name,
+          senderEmail: currentDb.inquiries[freshIdx].email,
+          content: `Thank you for your response! That sounds perfect. When can we schedule a technical deep-dive?`,
+          timestamp: new Date().toISOString(),
+          isAdmin: false
+        };
+        
+        currentDb.inquiries[freshIdx].thread!.push(clientReply);
+        currentDb.inquiries[freshIdx].status = 'New'; // Mark as new again for the admin to see
+        saveDB(currentDb);
+        // Dispatch custom event to notify UI if needed (simple for this mock)
+        window.dispatchEvent(new CustomEvent('db-update'));
+      }, 3000);
+    }
+  },
+
+  updateInquiryStatus: (id: string, status: Inquiry['status']) => {
+    const db = getDB();
+    const idx = db.inquiries.findIndex(i => i.id === id);
+    if (idx !== -1) {
+      db.inquiries[idx].status = status;
+      saveDB(db);
+    }
+  },
+
   signupClient: (name: string, email: string) => {
     const db = getDB();
     if (db.users.find(u => u.email === email)) throw new Error("Email already exists");
@@ -208,7 +259,8 @@ export const MockDB = {
       ...inq,
       id: Math.random().toString(36).substr(2, 9),
       status: 'New',
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      thread: []
     };
     db.inquiries.unshift(newInq);
     saveDB(db);
