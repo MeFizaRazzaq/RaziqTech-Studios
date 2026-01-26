@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import AdminSidebar from '../components/AdminSidebar';
-import { Plus, Search, Edit2, Trash2, Shield, User as UserIcon, X, Save, Rocket } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Shield, User as UserIcon, X, Save, Rocket, Globe, Linkedin, Github } from 'lucide-react';
 import { MockDB } from '../db';
 import { EmployeeProfile, UserRole, User } from '../types';
 
@@ -22,6 +22,8 @@ const AdminEmployees: React.FC = () => {
     skills: '',
     image: '',
     portfolioUrl: '',
+    linkedinUrl: '',
+    githubUrl: '',
     resumeUrl: ''
   });
 
@@ -37,6 +39,8 @@ const AdminEmployees: React.FC = () => {
         skills: emp.profile.skills.join(', '),
         image: emp.profile.image,
         portfolioUrl: emp.profile.portfolioUrl,
+        linkedinUrl: emp.profile.linkedinUrl || '',
+        githubUrl: emp.profile.githubUrl || '',
         resumeUrl: emp.profile.resumeUrl
       });
     } else {
@@ -50,6 +54,8 @@ const AdminEmployees: React.FC = () => {
         skills: '',
         image: 'https://picsum.photos/seed/new/400',
         portfolioUrl: '',
+        linkedinUrl: '',
+        githubUrl: '',
         resumeUrl: '#'
       });
     }
@@ -76,6 +82,8 @@ const AdminEmployees: React.FC = () => {
           skills: skillsArray,
           image: formData.image,
           portfolioUrl: formData.portfolioUrl,
+          linkedinUrl: formData.linkedinUrl,
+          githubUrl: formData.githubUrl,
           resumeUrl: formData.resumeUrl
         },
         {
@@ -99,6 +107,8 @@ const AdminEmployees: React.FC = () => {
           skills: skillsArray,
           image: formData.image,
           portfolioUrl: formData.portfolioUrl,
+          linkedinUrl: formData.linkedinUrl,
+          githubUrl: formData.githubUrl,
           resumeUrl: formData.resumeUrl,
           chatEnabled: true,
           projects: []
@@ -301,6 +311,48 @@ const AdminEmployees: React.FC = () => {
                   onChange={(e) => setFormData({...formData, skills: e.target.value})}
                   className="w-full px-6 py-4 bg-neutral-offwhite border-2 border-transparent rounded-2xl focus:outline-none focus:border-ice focus:bg-white transition-soft font-bold"
                 />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-navy/40">Portfolio Website</label>
+                  <div className="relative">
+                    <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+                    <input 
+                      type="url" 
+                      value={formData.portfolioUrl}
+                      onChange={(e) => setFormData({...formData, portfolioUrl: e.target.value})}
+                      placeholder="https://janedoe.me"
+                      className="w-full pl-12 pr-6 py-4 bg-neutral-offwhite border-2 border-transparent rounded-2xl focus:outline-none focus:border-ice focus:bg-white transition-soft font-bold"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-navy/40">LinkedIn Profile</label>
+                  <div className="relative">
+                    <Linkedin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+                    <input 
+                      type="url" 
+                      value={formData.linkedinUrl}
+                      onChange={(e) => setFormData({...formData, linkedinUrl: e.target.value})}
+                      placeholder="https://linkedin.com/in/..."
+                      className="w-full pl-12 pr-6 py-4 bg-neutral-offwhite border-2 border-transparent rounded-2xl focus:outline-none focus:border-ice focus:bg-white transition-soft font-bold"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-navy/40">GitHub Profile</label>
+                  <div className="relative">
+                    <Github className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+                    <input 
+                      type="url" 
+                      value={formData.githubUrl}
+                      onChange={(e) => setFormData({...formData, githubUrl: e.target.value})}
+                      placeholder="https://github.com/..."
+                      className="w-full pl-12 pr-6 py-4 bg-neutral-offwhite border-2 border-transparent rounded-2xl focus:outline-none focus:border-ice focus:bg-white transition-soft font-bold"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="pt-10 border-t border-navy/5">

@@ -14,6 +14,14 @@ export interface User {
   createdAt: string;
 }
 
+export interface Milestone {
+  id: string;
+  title: string;
+  isCompleted: boolean;
+  deadline?: string;
+  assignedEngineerId?: string; // User ID
+}
+
 export interface EmployeeProfile {
   id: string;
   userId: string;
@@ -24,6 +32,8 @@ export interface EmployeeProfile {
   skills: string[];
   resumeUrl: string;
   portfolioUrl: string;
+  linkedinUrl?: string;
+  githubUrl?: string;
   image: string;
   chatEnabled: boolean;
   projects: string[]; // Project IDs
@@ -47,9 +57,10 @@ export interface Project {
   outcome: string;
   techStack: string[];
   imageUrl: string;
-  teamIds: string[]; // User IDs
+  teamIds: string[]; // User IDs of assigned engineers
   progress: number; // 0-100
   status: 'IN_PLANNING' | 'IN_DEVELOPMENT' | 'STAGING' | 'COMPLETED';
+  milestones?: Milestone[];
 }
 
 export interface Inquiry {

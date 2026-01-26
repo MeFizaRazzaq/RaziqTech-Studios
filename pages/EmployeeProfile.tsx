@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
-import { ExternalLink, FileText, MessageCircle, Github, Linkedin, Briefcase, Zap, User, ArrowLeft } from 'lucide-react';
+import { ExternalLink, FileText, MessageCircle, Github, Linkedin, Briefcase, Zap, User, ArrowLeft, Globe } from 'lucide-react';
 import { MockDB } from '../db';
 
 const EmployeeProfilePage: React.FC = () => {
@@ -36,20 +36,42 @@ const EmployeeProfilePage: React.FC = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <a href={profile.resumeUrl} className="flex items-center justify-between p-5 bg-neutral-offwhite rounded-2xl hover:bg-ice/10 hover:text-ice transition-soft group border border-transparent hover:border-ice/20">
-                    <div className="flex items-center space-x-4">
-                      <FileText className="w-5 h-5" />
-                      <span className="font-black text-sm">Review Resume (PDF)</span>
-                    </div>
-                    <ExternalLink className="w-4 h-4 opacity-40" />
-                  </a>
-                  <a href={profile.portfolioUrl} target="_blank" className="flex items-center justify-between p-5 bg-neutral-offwhite rounded-2xl hover:bg-navy/10 hover:text-navy transition-soft group border border-transparent hover:border-navy/20">
-                    <div className="flex items-center space-x-4">
-                      <Github className="w-5 h-5" />
-                      <span className="font-black text-sm">Technical Portfolio</span>
-                    </div>
-                    <ExternalLink className="w-4 h-4 opacity-40" />
-                  </a>
+                  {profile.resumeUrl && (
+                    <a href={profile.resumeUrl} className="flex items-center justify-between p-5 bg-neutral-offwhite rounded-2xl hover:bg-ice/10 hover:text-ice transition-soft group border border-transparent hover:border-ice/20">
+                      <div className="flex items-center space-x-4">
+                        <FileText className="w-5 h-5" />
+                        <span className="font-black text-sm">Review Resume (PDF)</span>
+                      </div>
+                      <ExternalLink className="w-4 h-4 opacity-40" />
+                    </a>
+                  )}
+                  {profile.portfolioUrl && (
+                    <a href={profile.portfolioUrl} target="_blank" className="flex items-center justify-between p-5 bg-neutral-offwhite rounded-2xl hover:bg-navy/10 hover:text-navy transition-soft group border border-transparent hover:border-navy/20">
+                      <div className="flex items-center space-x-4">
+                        <Globe className="w-5 h-5" />
+                        <span className="font-black text-sm">Portfolio Website</span>
+                      </div>
+                      <ExternalLink className="w-4 h-4 opacity-40" />
+                    </a>
+                  )}
+                  {profile.githubUrl && (
+                    <a href={profile.githubUrl} target="_blank" className="flex items-center justify-between p-5 bg-neutral-offwhite rounded-2xl hover:bg-navy/10 hover:text-navy transition-soft group border border-transparent hover:border-navy/20">
+                      <div className="flex items-center space-x-4">
+                        <Github className="w-5 h-5" />
+                        <span className="font-black text-sm">GitHub Profile</span>
+                      </div>
+                      <ExternalLink className="w-4 h-4 opacity-40" />
+                    </a>
+                  )}
+                  {profile.linkedinUrl && (
+                    <a href={profile.linkedinUrl} target="_blank" className="flex items-center justify-between p-5 bg-neutral-offwhite rounded-2xl hover:bg-blue-500/10 hover:text-blue-600 transition-soft group border border-transparent hover:border-blue-500/20">
+                      <div className="flex items-center space-x-4">
+                        <Linkedin className="w-5 h-5" />
+                        <span className="font-black text-sm">LinkedIn Profile</span>
+                      </div>
+                      <ExternalLink className="w-4 h-4 opacity-40" />
+                    </a>
+                  )}
                   
                   {profile.chatEnabled && (
                     <button className="w-full flex items-center justify-center space-x-3 py-6 bg-ice text-white rounded-2xl font-black shadow-xl shadow-ice/20 hover:bg-ice-dark transition-soft hover-lift mt-6">
