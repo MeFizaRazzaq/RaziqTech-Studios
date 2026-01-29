@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Code, Smartphone, Zap, CheckCircle, Star, ShieldCheck } from 'lucide-react';
 
 const Home: React.FC = () => {
+  console.log('Home component rendering...');
   return (
     <div className="pt-20">
       {/* Hero Section */}
@@ -23,7 +24,7 @@ const Home: React.FC = () => {
             <span className="text-ice">Impactful Results.</span>
           </h1>
           <p className="max-w-2xl mx-auto text-xl text-navy/60 leading-relaxed mb-14 font-medium">
-            RaziqTech Studios provides elite web, mobile, and AI engineering services for startups and enterprises ready to scale.
+            PentaCode provides elite web, mobile, and AI engineering services for startups and enterprises ready to scale.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-5 sm:space-y-0 sm:space-x-8">
             <Link to="/contact" className="w-full sm:w-auto px-10 py-5 bg-ice text-white rounded-2xl font-black hover:bg-ice-dark transition-soft shadow-2xl shadow-ice/30 flex items-center justify-center group hover-lift">

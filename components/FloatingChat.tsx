@@ -15,7 +15,7 @@ const FloatingChat: React.FC = () => {
                 <MessageCircle className="w-5 h-5" />
               </div>
               <div>
-                <p className="font-semibold text-sm">RaziqTech Support</p>
+                <p className="font-semibold text-sm">PentaCode Support</p>
                 <p className="text-xs text-indigo-100">Usually replies in minutes</p>
               </div>
             </div>

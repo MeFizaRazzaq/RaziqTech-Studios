@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Rocket, ShieldCheck, LayoutDashboard, LogIn } from 'lucide-react';
+import { Menu, X, ShieldCheck, LayoutDashboard, LogIn } from 'lucide-react';
+import logoUrl from '../src/Logo/Logo.svg';
 import { useAuth } from '../App';
 import { UserRole } from '../types';
 
@@ -13,8 +14,8 @@ const Navbar: React.FC = () => {
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'Services', path: '/services' },
-    { name: 'Portfolio', path: '/portfolio' },
-    { name: 'Team', path: '/team' },
+    { name: 'Projects', path: '/portfolio' },
+    // { name: 'Team', path: '/team' },
     { name: 'Contact', path: '/contact' },
   ];
 
@@ -30,10 +31,10 @@ const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-20 items-center">
           <Link to="/" className="flex items-center space-x-3 group">
-            <div className="p-2.5 bg-navy rounded-xl group-hover:bg-ice transition-soft">
-              <Rocket className="w-6 h-6 text-white" />
+            <div className="p-2.5 bg-navy rounded-xl group-hover:bg-ice transition-soft flex items-center justify-center">
+              <img src={logoUrl} alt="PentaCode" className="w-6 h-6 object-contain" />
             </div>
-            <span className="text-2xl font-black tracking-tight text-navy">RaziqTech</span>
+            <span className="text-2xl font-black tracking-tight text-navy">PentaCode</span>
           </Link>
 
           {/* Desktop Nav */}
@@ -52,7 +53,7 @@ const Navbar: React.FC = () => {
               ))}
             </div>
             
-            <div className="flex items-center space-x-4 border-l border-navy/10 pl-8">
+            {/* <div className="flex items-center space-x-4 border-l border-navy/10 pl-8">
               {user ? (
                 <Link 
                   to={getDashboardPath()} 
@@ -73,7 +74,7 @@ const Navbar: React.FC = () => {
               <Link to="/contact" className="px-6 py-3 rounded-xl bg-ice text-white text-xs font-black uppercase tracking-widest hover:bg-ice-dark transition-soft shadow-xl shadow-ice/20 hover-lift">
                 Start a Project
               </Link>
-            </div>
+            </div> */}
           </div>
 
           {/* Mobile Menu Button */}

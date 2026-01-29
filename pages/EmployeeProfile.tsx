@@ -37,13 +37,15 @@ const EmployeeProfilePage: React.FC = () => {
 
                 <div className="space-y-4">
                   {profile.resumeUrl && (
-                    <a href={profile.resumeUrl} className="flex items-center justify-between p-5 bg-neutral-offwhite rounded-2xl hover:bg-ice/10 hover:text-ice transition-soft group border border-transparent hover:border-ice/20">
+                    <button 
+                      onClick={() => window.open(profile.resumeUrl, '_blank')} 
+                      className="w-full flex items-center justify-between p-5 bg-neutral-offwhite rounded-2xl hover:bg-ice/10 hover:text-ice transition-soft group border border-transparent hover:border-ice/20">
                       <div className="flex items-center space-x-4">
                         <FileText className="w-5 h-5" />
-                        <span className="font-black text-sm">Review Resume (PDF)</span>
+                        <span className="font-black text-sm">View Resume (PDF)</span>
                       </div>
                       <ExternalLink className="w-4 h-4 opacity-40" />
-                    </a>
+                    </button>
                   )}
                   {profile.portfolioUrl && (
                     <a href={profile.portfolioUrl} target="_blank" className="flex items-center justify-between p-5 bg-neutral-offwhite rounded-2xl hover:bg-navy/10 hover:text-navy transition-soft group border border-transparent hover:border-navy/20">

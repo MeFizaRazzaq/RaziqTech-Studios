@@ -15,20 +15,21 @@ interface DB {
 
 const initialDB: DB = {
   users: [
-    { id: '1', email: 'admin@raziqtech.com', name: 'Alex Rivera', role: UserRole.ADMIN, avatar: 'https://picsum.photos/seed/admin/200', createdAt: new Date().toISOString() },
-    { id: '2', email: 'jane@raziqtech.com', name: 'Jane Doe', role: UserRole.EMPLOYEE, avatar: 'https://picsum.photos/seed/jane/200', createdAt: new Date().toISOString() },
+    { id: '1', email: 'admin@raziqtech.com', name: 'Hamza Asif Baig', role: UserRole.ADMIN, avatar: 'https://picsum.photos/seed/admin/200', createdAt: new Date().toISOString() },
+    { id: '2', email: 'jane@raziqtech.com', name: 'Hamza Asif Baig', role: UserRole.EMPLOYEE, avatar: 'https://picsum.photos/seed/jane/200', createdAt: new Date().toISOString() },
     { id: '3', email: 'sam@raziqtech.com', name: 'Sam Smith', role: UserRole.EMPLOYEE, avatar: 'https://picsum.photos/seed/sam/200', createdAt: new Date().toISOString() },
     { id: '4', email: 'client@enterprise.com', name: 'John Client', role: UserRole.CLIENT, avatar: 'https://picsum.photos/seed/client/200', createdAt: new Date().toISOString() },
   ],
+  
   profiles: [
     {
-      id: 'p1',
-      userId: '2',
-      username: 'janedoe',
-      fullName: 'Jane Doe',
-      roleTitle: 'Senior AI Engineer',
+      id: 'E-1',
+      userId: '1',
+      username: 'hamza-asif',
+      fullName: 'Hamza Asif Baig',
+      roleTitle: 'Software Engineer',
       bio: 'Pioneer in neural network optimization and computer vision.',
-      skills: ['Python', 'PyTorch', 'Next.js', 'TensorFlow'],
+      skills: ['Full-Stack', 'Flutter', 'Computer Vision', 'Rest APIs'],
       resumeUrl: '#',
       portfolioUrl: 'https://github.com/janedoe',
       githubUrl: 'https://github.com/janedoe',
@@ -110,13 +111,20 @@ const initialDB: DB = {
   }
 };
 
+// Static DB in memory - localStorage disabled
+let staticDB: DB = { ...initialDB };
+
 const getDB = (): DB => {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  return stored ? JSON.parse(stored) : initialDB;
+  // localStorage is disabled - returning static in-memory DB
+  // const stored = localStorage.getItem(STORAGE_KEY);
+  // return stored ? JSON.parse(stored) : initialDB;
+  return staticDB;
 };
 
 const saveDB = (db: DB) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+  // localStorage is disabled - changes not persisted
+  // localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+  staticDB = db;
 };
 
 export const MockDB = {

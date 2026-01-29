@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body { font-family: 'Inter', sans-serif; background-color: #F4F4F4; color: #0A1A2F; }
+.glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
+.transition-soft { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.hover-lift:hover { transform: translateY(-4px); }
+.card-shadow { box-shadow: 0 10px 30px -15px rgba(10, 26, 47, 0.1); }
+.sidebar-item-active { border-right: 3px solid #3AAFA9; background: rgba(58, 175, 169, 0.1); }
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #3AAFA9; border-radius: 10px; }
+
+@media print {
+    .no-print { display: none !important; }
+    .print-only { display: block !important; }
+    body { background-color: white !important; color: black !important; padding: 0 !important; margin: 0 !important; }
+    .pl-72 { padding-left: 0 !important; }
+    .p-16 { padding: 2rem !important; }
+    .rounded-\[3rem\], .rounded-\[2\.5rem\], .rounded-2xl { border-radius: 0.5rem !important; }
+    .shadow-xl, .shadow-2xl, .card-shadow { box-shadow: none !important; border: 1px solid #eee !important; }
+    @page { margin: 1.5cm; }
+}
+.print-only { display: none; }

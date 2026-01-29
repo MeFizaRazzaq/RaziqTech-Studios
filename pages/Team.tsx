@@ -11,7 +11,7 @@ const Team: React.FC = () => {
     <div className="pt-32 pb-32 bg-neutral-offwhite">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mb-24">
-          <h1 className="text-5xl lg:text-7xl font-black text-navy mb-8 tracking-tighter">The Engineering Cohort</h1>
+          <h1 className="text-5xl lg:text-5xl font-black text-navy mb-8 tracking-tighter">The Engineering Cohort</h1>
           <p className="text-xl text-navy/60 font-medium leading-relaxed">
             A specialized assembly of senior engineers, architects, and AI researchers dedicated to shipping world-class infrastructure.
           </p>

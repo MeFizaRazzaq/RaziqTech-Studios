@@ -42,7 +42,7 @@ const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h4 className="font-black text-navy text-lg mb-1">Technical Inquiry</h4>
-                  <p className="text-navy/60 font-bold">solutions@raziqtech.com</p>
+                  <p className="text-navy/60 font-bold">pentacode05@gmail.com</p>
                 </div>
               </div>
               <div className="flex items-start space-x-6">
@@ -51,7 +51,7 @@ const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h4 className="font-black text-navy text-lg mb-1">HQ Location</h4>
-                  <p className="text-navy/60 font-bold">Innovation District, San Francisco, CA</p>
+                  <p className="text-navy/60 font-bold">Lahore, Punjab, Pakistan</p>
                 </div>
               </div>
             </div>
@@ -103,9 +103,9 @@ const Contact: React.FC = () => {
                       className="w-full px-6 py-4 bg-neutral-offwhite border-2 border-transparent rounded-2xl focus:outline-none focus:border-ice focus:bg-white transition-soft font-bold appearance-none cursor-pointer"
                     >
                       <option>Web Engineering</option>
-                      <option>Mobile Ecosystems</option>
+                      <option>Mobile Development</option>
                       <option>AI Implementation</option>
-                      <option>Infrastructure Audit</option>
+                      {/* <option>Infrastructure Audit</option> */}
                     </select>
                   </div>
                   <div className="space-y-3">
@@ -115,10 +115,10 @@ const Contact: React.FC = () => {
                       onChange={(e) => setFormData({...formData, budget: e.target.value})}
                       className="w-full px-6 py-4 bg-neutral-offwhite border-2 border-transparent rounded-2xl focus:outline-none focus:border-ice focus:bg-white transition-soft font-bold appearance-none cursor-pointer"
                     >
-                      <option>$25k - $50k</option>
-                      <option>$50k - $100k</option>
-                      <option>$100k - $250k</option>
-                      <option>$250k+</option>
+                      <option>$50 - $1K</option>
+                      <option>$1k - $10k</option>
+                      <option>$10k - $50k</option>
+                      <option>$50k+</option>
                     </select>
                   </div>
                 </div>
