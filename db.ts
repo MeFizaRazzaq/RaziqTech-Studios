@@ -61,17 +61,17 @@ const initialDB: DB = {
   projects: [
     {
       id: 'proj1',
-      title: 'EchoVision AI',
-      category: 'AI',
-      description: 'A real-time sentiment analysis engine for retail audio.',
+      title: 'Clever catch- Intelligent surveillance system',
+      category: 'Web',
+      description: 'Built a real-time AI-powered surveillance system for retail theft prevention using YOLOv8 and a custom suspicion scoring algorithm.  −  Developed a desktop admin app (Electron + React) for live CCTV monitoring, alerts, and rolebased access.  −  Set up a React Native mobile app (login page) to prepare for real-time alert notifications to store employees.  −  Integrated PostgreSQL + Flask APIs for secure user management, event logging, and low-latency  video streaming (<300 ms).',
       problem: 'Retailers lacked insights into customer satisfaction in physical stores.',
       solution: 'We deployed an edge-computing AI solution using localized sensors.',
       outcome: 'Reduced customer dissatisfaction by 40% through real-time staff alerts.',
-      techStack: ['Python', 'FastAPI', 'Azure IoT', 'D3.js'],
+      techStack: ['React.js', 'Python', 'Tailwind', 'PostgreSQL', 'Electron', 'React Native', 'YOLOv8', 'Flask'], // React Native was missing before:
       imageUrl: 'https://picsum.photos/seed/tech1/800/600',
       teamIds: ['2'],
-      progress: 75,
-      status: 'IN_DEVELOPMENT',
+      progress: 100,
+      status: 'COMPLETED',
       clientChatEnabled: false,
       chatMessages: [
         { id: 'm1', senderId: '2', senderName: 'Jane Doe', senderRole: UserRole.EMPLOYEE, content: 'Initial edge compute sensors deployed.', timestamp: new Date(Date.now() - 1000000).toISOString(), isVisibleToClient: true }

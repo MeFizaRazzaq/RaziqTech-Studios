@@ -81,9 +81,9 @@ const Portfolio: React.FC = () => {
                       ))}
                     </div>
 
-                    <button className="flex items-center text-navy font-black hover:text-ice transition-soft text-lg group">
+                    <Link to={`/portfolio/${proj.id}`} className="flex items-center text-navy font-black hover:text-ice transition-soft text-lg group">
                       Full Detail <ArrowUpRight className="ml-2 w-5 h-5 group-hover:-translate-y-1 group-hover:translate-x-1 transition-soft" />
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>

@@ -14,6 +14,7 @@ import Home from './pages/Home';
 import Services from './pages/Services';
 import Team from './pages/Team';
 import Portfolio from './pages/Portfolio';
+import ProjectDetail from './pages/ProjectDetail';
 import Contact from './pages/Contact';
 import EmployeeProfilePage from './pages/EmployeeProfile';
 import Login from './pages/Login';
@@ -125,6 +126,7 @@ const App: React.FC = () => {
             <Route path="/team" element={<Layout><Team /></Layout>} />
             <Route path="/team/:username" element={<Layout><EmployeeProfilePage /></Layout>} />
             <Route path="/portfolio" element={<Layout><Portfolio /></Layout>} />
+            <Route path="/portfolio/:id" element={<Layout><ProjectDetail /></Layout>} />
             <Route path="/contact" element={<Layout><Contact /></Layout>} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
