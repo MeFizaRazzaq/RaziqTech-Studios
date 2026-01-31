@@ -14,7 +14,7 @@ const Portfolio: React.FC = () => {
     <div className="pt-32 pb-32">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-24">
-          <h1 className="text-5xl lg:text-7xl font-black text-navy mb-10 tracking-tighter">Case Portfolio</h1>
+          <h1 className="text-5xl lg:text-7xl font-black text-navy mb-10 tracking-tighter">Successful Projects</h1>
           <p className="text-xl text-navy/60 max-w-2xl mx-auto mb-16 font-medium">A selection of technical success stories across our core disciplines.</p>
           
           <div className="flex justify-center flex-wrap gap-4">

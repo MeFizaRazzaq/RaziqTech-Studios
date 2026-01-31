@@ -17,11 +17,11 @@ const Footer: React.FC = () => {
             <p className="text-neutral-coolgray leading-relaxed mb-8 font-medium">
               Architecting high-performance digital ecosystems for global enterprises. Web, Mobile, and AI solutions driven by precision.
             </p>
-            <div className="flex space-x-5">
+            {/* <div className="flex space-x-5">
               <Twitter className="w-6 h-6 hover:text-ice cursor-pointer transition-soft" />
               <Linkedin className="w-6 h-6 hover:text-ice cursor-pointer transition-soft" />
               <Github className="w-6 h-6 hover:text-ice cursor-pointer transition-soft" />
-            </div>
+            </div> */}
           </div>
 
           <div>
@@ -60,13 +60,13 @@ const Footer: React.FC = () => {
           </div> */}
         </div>
 
-        <div className="border-t border-white/5 pt-12 flex flex-col md:flex-row justify-between items-center text-sm font-semibold">
-          <p>© 2026 PentaCode Limited Inc. Engineering Excellence Worldwide.</p>
-          <div className="flex space-x-10 mt-6 md:mt-0">
+        <div className="border-t border-white/5 pt-12 flex flex-col md:flex-row justify-center items-center text-sm font-semibold">
+          <p className="text-center">© 2026 PentaCode Limited Inc. Engineering Excellence Worldwide.</p>
+          {/* <div className="flex space-x-10 mt-6 md:mt-0">
             <span className="hover:text-white cursor-pointer transition-soft">Privacy</span>
             <span className="hover:text-white cursor-pointer transition-soft">Terms</span>
             <span className="hover:text-white cursor-pointer transition-soft">Cookie Policy</span>
-          </div>
+          </div> */}
         </div>
       </div>
     </footer>

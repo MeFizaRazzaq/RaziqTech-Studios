@@ -8,23 +8,58 @@ const Contact: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    projectType: 'Web Development',
-    budget: '$25k - $50k',
+    projectType: 'Web Engineering',
+    budget: '$10k - $50k',
     message: ''
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Set this in your .env as VITE_FORMSPREE_ENDPOINT="https://formspree.io/f/mwvbjlqd"
+  const FORMSPREE_ENDPOINT = (import.meta as any).env?.VITE_FORMSPREE_ENDPOINT ?? 'https://formspree.io/f/mwvbjlqd';
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    MockDB.addInquiry(formData);
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 8000);
-    setFormData({
-      name: '',
-      email: '',
-      projectType: 'Web Development',
-      budget: '$25k - $50k',
-      message: ''
-    });
+    setLoading(true);
+    setError(null);
+
+    try {
+      const payload = {
+        name: formData.name,
+        email: formData.email,
+        projectType: formData.projectType,
+        budget: formData.budget,
+        message: formData.message,
+      };
+
+      const res = await fetch(FORMSPREE_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok) {
+        // keep local copy as before
+        MockDB.addInquiry(formData);
+        setSubmitted(true);
+        setFormData({
+          name: '',
+          email: '',
+          projectType: 'Web Development',
+          budget: '$25k - $50k',
+          message: ''
+        });
+        setTimeout(() => setSubmitted(false), 8000);
+      } else {
+        setError(data?.error || data?.errors?.[0]?.message || 'Submission failed. Please try again.');
+      }
+    } catch (err) {
+      setError('Network error, please try again later.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -102,10 +137,10 @@ const Contact: React.FC = () => {
                       onChange={(e) => setFormData({...formData, projectType: e.target.value})}
                       className="w-full px-6 py-4 bg-neutral-offwhite border-2 border-transparent rounded-2xl focus:outline-none focus:border-ice focus:bg-white transition-soft font-bold appearance-none cursor-pointer"
                     >
-                      <option>Web Engineering</option>
-                      <option>Mobile Development</option>
-                      <option>AI Implementation</option>
-                      {/* <option>Infrastructure Audit</option> */}
+                      <option value="Web Engineering">Web Engineering</option>
+                      <option value="Mobile Development">Mobile Development</option>
+                      <option value="AI Implementation">AI Implementation</option>
+                      {/* <option value="Infrastructure Audit">Infrastructure Audit</option> */}
                     </select>
                   </div>
                   <div className="space-y-3">
@@ -115,10 +150,10 @@ const Contact: React.FC = () => {
                       onChange={(e) => setFormData({...formData, budget: e.target.value})}
                       className="w-full px-6 py-4 bg-neutral-offwhite border-2 border-transparent rounded-2xl focus:outline-none focus:border-ice focus:bg-white transition-soft font-bold appearance-none cursor-pointer"
                     >
-                      <option>$50 - $1K</option>
-                      <option>$1k - $10k</option>
-                      <option>$10k - $50k</option>
-                      <option>$50k+</option>
+                      <option value="$50 - $1K">$50 - $1K</option>
+                      <option value="$1k - $10k">$1k - $10k</option>
+                      <option value="$10k - $50k">$10k - $50k</option>
+                      <option value="$50k+">$50k+</option>
                     </select>
                   </div>
                 </div>
@@ -135,11 +170,18 @@ const Contact: React.FC = () => {
                   ></textarea>
                 </div>
 
+                {error && (
+                  <div className="rounded-md bg-red-50 p-4 text-sm text-red-700 font-bold">
+                    {error}
+                  </div>
+                )}
+
                 <button 
                   type="submit" 
-                  className="w-full py-6 bg-navy text-white rounded-2xl font-black text-xl shadow-2xl hover:bg-navy-light transition-soft flex items-center justify-center group hover-lift"
+                  disabled={loading}
+                  className={`w-full py-6 ${loading ? 'opacity-60 cursor-not-allowed' : 'bg-navy hover:bg-navy-light'} text-white rounded-2xl font-black text-xl shadow-2xl transition-soft flex items-center justify-center group hover-lift`}
                 >
-                  Submit Brief
+                  {loading ? 'Sending…' : 'Submit Brief'}
                   <Send className="ml-4 w-6 h-6 group-hover:translate-x-2 group-hover:-translate-y-1 transition-soft" />
                 </button>
               </form>
